@@ -17,11 +17,11 @@ async function bootstrap() {
   );
 
   // Habilitar CORS para múltiples orígenes
-  app.enableCors({
-    origin: ['http://localhost:5173', 'https://fahaadtienda01.netlify.app'], // URLs permitidas
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    credentials: true,
-  });
+ // app.enableCors({
+  //  origin: ['http://localhost:5173', 'https://fahaadtienda01.netlify.app'], // URLs permitidas
+  //  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  //  credentials: true,
+ // });
 
 
   await app.listen(process.env.PORT);

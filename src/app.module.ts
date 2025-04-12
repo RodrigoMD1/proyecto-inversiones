@@ -5,6 +5,8 @@ import { AssetsModule } from './assets/assets.module';
 import { ConfigModule } from '@nestjs/config';
 import { User } from './users/entities/user.entity';
 import { Asset } from './assets/entities/asset.entity';
+import { PortfolioModule } from './portfolio/portfolio.module';
+import { PortfolioItem } from './portfolio/entities/portfolio.entity';
 
 @Module({
   imports: [
@@ -18,11 +20,12 @@ import { Asset } from './assets/entities/asset.entity';
       username: process.env.DB_USERNAME,
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
-      entities: [User, Asset],
-      synchronize: true, // En desarrollo lo puedes dejar en true, pero en producción debe estar en false
+      entities: [User, Asset,PortfolioItem],
+      synchronize: false, // En desarrollo lo puedes dejar en true, pero en producción debe estar en false
     }),
     UsersModule,
     AssetsModule,
+    PortfolioModule,
   ],
 })
 export class AppModule {}
