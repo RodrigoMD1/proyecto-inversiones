@@ -1,11 +1,10 @@
-import { Column, PrimaryGeneratedColumn } from "typeorm";
-//import { PortfolioItem } from '../../portfolio/entities/portfolio-item.entity'; //* esto para cuando este el modulo de assets 
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+// import { PortfolioItem } from '../../portfolio/entities/portfolio-item.entity'; //* esto lo descomentás cuando tengas el módulo de assets
 
-
-
+@Entity() // Esto indica que la clase es una entidad
 export class User {
 
-    @PrimaryGeneratedColumn()
+    @PrimaryGeneratedColumn() // Deberías usar uuid si quieres ids tipo UUID
     id: number;
 
     @Column({ unique: true })
@@ -15,10 +14,9 @@ export class User {
     name: string;
 
     @Column()
-    password: string; // Esto va encriptado si metés auth después
+    password: string; // Aquí es importante encriptar la contraseña cuando implemente la autenticación
 
     // @OneToMany(() => PortfolioItem, (item) => item.user)
     // portfolio: PortfolioItem[];
-
 
 }
