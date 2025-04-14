@@ -21,7 +21,7 @@ export class PortfolioItem {
   @Column('decimal', { precision: 10, scale: 2 })
   purchase_price: number; // Precio de compra por unidad del activo
 
-  @ManyToOne(() => User, (user) => user.portfolio) // Relación con la entidad User
-  @JoinColumn({ name: 'user_id' })
-  user: User;  
+  @ManyToOne(() => User, (user) => user.portfolio, { eager: true })
+@JoinColumn({ name: 'user_id' })
+user: User; 
 }

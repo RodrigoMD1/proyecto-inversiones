@@ -49,7 +49,7 @@ export class AuthService {
 
   async login(loginUserDto: LoginUserDto) {
 
-    const { contraseña, email } = loginUserDto;
+    const { password, email } = loginUserDto;
 
     const user = await this.userRepository.findOne({
       where: { email },
@@ -59,7 +59,7 @@ export class AuthService {
     if (!user)
       throw new UnauthorizedException('las credenciales no son validas (email)');
 
-    if (!bcrypt.compareSync(contraseña, user.password))
+    if (!bcrypt.compareSync(password, user.password))
       throw new UnauthorizedException('las credenciales no son validas (contraseña)')
 
     return {

@@ -25,7 +25,7 @@ export class PortfolioController {
     }
     return portfolio;
   }
-
+  
   @Patch(':id')
   async update(@Param('id') id: string, @Body() updatePortfolioDto: UpdatePortfolioDto) {
     const portfolio = await this.portfolioService.update(+id, updatePortfolioDto);
@@ -40,6 +40,24 @@ export class PortfolioController {
     return this.portfolioService.findByUser(+userId);
   }
 
+  @Get('statistics/:userId')
+  async getStatistics(@Param('userId') userId: string) {
+    const userIdNumber = +userId;
+    if (isNaN(userIdNumber)) {
+      throw new NotFoundException('El ID de usuario no es válido');
+    }
+    const totalStats = await this.portfolioService.getStatistics(userIdNumber);
+    const rankedAssets = await this.portfolioService.getRankedAssets(userIdNumber);
+    const summaryByType = await this.portfolioService.getSummaryByType(userIdNumber);
+    const topAsset = await this.portfolioService.getTopAsset(userIdNumber);
+
+    return {
+      totalStats,
+      rankedAssets,
+      summaryByType,
+      topAsset,
+    };
+  }
 
   @Delete(':id')
   async remove(@Param('id') id: string) {
