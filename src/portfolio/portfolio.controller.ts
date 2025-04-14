@@ -35,6 +35,12 @@ export class PortfolioController {
     return portfolio;
   }
 
+  @Get('/user/:userId')
+  findByUser(@Param('userId') userId: string) {
+    return this.portfolioService.findByUser(+userId);
+  }
+
+
   @Delete(':id')
   async remove(@Param('id') id: string) {
     const result = await this.portfolioService.remove(+id);

@@ -25,6 +25,13 @@ export class PortfolioService {
     return this.portfolioRepository.findOne({ where: { id } });
   }
 
+
+  async findByUser(userId: number) {
+    return this.portfolioRepository.find({
+      where: { user: { id: userId } },
+    });
+  }
+
   async update(id: number, updatePortfolioDto: UpdatePortfolioDto) {
     await this.portfolioRepository.update(id, updatePortfolioDto);
     return this.portfolioRepository.findOne({ where: { id } });
