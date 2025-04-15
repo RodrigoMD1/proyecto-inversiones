@@ -1,5 +1,6 @@
 
-import { BeforeInsert, BeforeUpdate, Column, Entity, PrimaryGeneratedColumn, } from "typeorm";
+import { PortfolioItem } from "src/portfolio/entities/portfolio.entity";
+import { BeforeInsert, BeforeUpdate, Column, Entity, OneToMany, PrimaryGeneratedColumn, } from "typeorm";
 
 
 
@@ -25,6 +26,9 @@ export class User {
 
     @Column('text', { array: true, default: ['user'] })
     roles: string[];
+
+    @OneToMany(() => PortfolioItem, (item) => item.user)
+portfolio: PortfolioItem[];
 
     /////////////////////////////////////////////////////
 

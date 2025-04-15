@@ -1,5 +1,6 @@
 import { IsString, IsNotEmpty, IsNumber } from 'class-validator';
 
+
 export class CreatePortfolioDto {
   @IsString()
   @IsNotEmpty()
@@ -21,7 +22,7 @@ export class CreatePortfolioDto {
   @IsNotEmpty()
   purchase_price: number; // Precio de compra por unidad del activo
 
-  @IsNumber()
+  @IsString()
   @IsNotEmpty()
-  user_id: number; // ID del usuario asociado a este activo
+  user_id: string; // ID del usuario asociado a este activo
 }

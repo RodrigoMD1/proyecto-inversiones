@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PortfolioItem } from './entities/portfolio.entity';
-import { User } from '../users/entities/user.entity';  // Importar la entidad User
+import { User } from '../auth/entities/user.entity';  // Importar la entidad User
 import { CreatePortfolioDto } from './dto/create-portfolio.dto';
 import { UpdatePortfolioDto } from './dto/update-portfolio.dto';
 
@@ -10,19 +10,19 @@ import { UpdatePortfolioDto } from './dto/update-portfolio.dto';
 export class PortfolioService {
 
 
-    constructor(
+  constructor(
     @InjectRepository(PortfolioItem)
     private portfolioRepository: Repository<PortfolioItem>,
 
     @InjectRepository(User)  // Inyectar UserRepository aquí
     private userRepository: Repository<User>,  // Asegúrate de que se inyecta correctamente
-  ) {}
+  ) { }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////////////////////////////////
   // Crear un nuevo portfolio, con la validación del usuario
   async create(data: CreatePortfolioDto): Promise<PortfolioItem> {
     const user = await this.userRepository.findOne({
-      where: { id: data.user_id },
+      where: { id: String(data.user_id) },
     });
 
     if (!user) {
@@ -40,27 +40,27 @@ export class PortfolioService {
 
     return this.portfolioRepository.save(portfolio);
   }
-////////////////////////////////////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////////////////////////////////
   // Obtener todos los portfolios con el usuario relacionado
   async findAll(): Promise<PortfolioItem[]> {
     return this.portfolioRepository.find({
       relations: ['user'],  // Cargar la relación del usuario
     });
   }
-////////////////////////////////////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////////////////////////////////
   // Obtener un portfolio por su ID
   findOne(id: number) {
     return this.portfolioRepository.findOne({ where: { id } });
   }
-////////////////////////////////////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////////////////////////////////
   // Obtener todos los portfolios de un usuario específico
-  async findByUser(userId: number) {
+  async findByUser(userId: string) {
     return this.portfolioRepository.find({
       where: { user: { id: userId } },
     });
   }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////////////////////////////////
 
   // Actualizar un portfolio
   async update(id: number, updatePortfolioDto: UpdatePortfolioDto) {
@@ -75,10 +75,10 @@ export class PortfolioService {
     return this.portfolioRepository.delete(id);
   }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////////////////////////////////
 
   // Obtener estadísticas del portfolio
-  async getStatistics(userId: number) {
+  async getStatistics(userId: string) {
     const items = await this.portfolioRepository.find({
       where: { user: { id: userId } },
     });
@@ -101,7 +101,7 @@ export class PortfolioService {
       const value = price * quantity;
       totalValue += value;
       totalQuantity += quantity;
-    
+
       if (distributionByType[item.type]) {
         distributionByType[item.type] += value;
       } else {
@@ -110,8 +110,8 @@ export class PortfolioService {
     }
 
     const weightedAveragePrice = totalQuantity
-    ? totalValue / totalQuantity
-    : 0;
+      ? totalValue / totalQuantity
+      : 0;
 
     const percentageByType: { [type: string]: number } = {};
     for (const type in distributionByType) {
@@ -124,11 +124,11 @@ export class PortfolioService {
       distribution: percentageByType,
     };
   }
-////////////////////////////////////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
   // Obtener activos ordenados por su valor total
-  async getRankedAssets(userId: number) {
+  async getRankedAssets(userId: string) {
     const items = await this.portfolioRepository.find({
       where: { user: { id: userId } },
     });
@@ -147,7 +147,7 @@ export class PortfolioService {
 
 
   // Resumen por tipo de activo
-  async getSummaryByType(userId: number) {
+  async getSummaryByType(userId: string) {
     const items = await this.portfolioRepository.find({
       where: { user: { id: userId } },
     });
@@ -158,7 +158,7 @@ export class PortfolioService {
       const price = Number(item.purchase_price);
       const quantity = Number(item.quantity);
       const value = price * quantity;
-    
+
       if (!summary[item.type]) {
         summary[item.type] = { totalValue: 0, count: 0, averagePrice: 0 };
       }
@@ -186,7 +186,7 @@ export class PortfolioService {
 
 
   // Obtener el activo con mayor valor
-  async getTopAsset(userId: number) {
+  async getTopAsset(userId: string) {
     const items = await this.portfolioRepository.find({
       where: { user: { id: userId } },
     });

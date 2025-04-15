@@ -1,5 +1,5 @@
 import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn } from 'typeorm';
-import { User } from '../../users/entities/user.entity'; // Asegúrate de importar la entidad User
+import { User } from '../../auth/entities/user.entity'; // Asegúrate de importar la entidad User
 
 @Entity('portfolio_items')
 export class PortfolioItem {

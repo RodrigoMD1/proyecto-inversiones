@@ -10,7 +10,7 @@ import { UserRoleGuard } from '../guards/user-role/user-role.guard';
 export function Auth(...roles: ValidRoles[]) {
 
     return applyDecorators(
-        RoleProtected(ValidRoles.admin), // esto seria que necesita uno de esos dos para poder ver la pagina private2
+        RoleProtected(ValidRoles.usuario), // esto seria que necesita uno de esos dos para poder ver la pagina private2
         UseGuards(AuthGuard(), UserRoleGuard),
 
     );

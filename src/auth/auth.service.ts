@@ -26,10 +26,14 @@ export class AuthService {
     try {
 
       const { password, ...userData } = createUserDto;
+      const hashedPassword = bcrypt.hashSync(password, 15);
+      console.log('Contraseña cifrada:', hashedPassword); // Agregar log de la contraseña cifrada
+
 
       const user = this.userRepository.create({
         ...userData,
         password: bcrypt.hashSync(password, 15)
+
       });
 
       await this.userRepository.save(user)
@@ -84,21 +88,26 @@ export class AuthService {
       token: this.getJwtToken({ id: user.id })
     };
   }
- ////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////
 
 
 
   // manejador de errores 
 
   private handleDBErrors(error: any): void {
-    if (error.code === '23505')
-      throw new BadRequestException(error.detail);
-    console.log(error);
+    console.log(error); // Agregar log para ver el error completo
 
-    throw new InternalServerErrorException('por favor verificar el servidor de logs ')
+    if (error.code === '23505') {
+      throw new BadRequestException(error.detail); // Error de clave duplicada
+    }
 
+    // Manejo adicional de otros códigos de error de la base de datos
+    if (error.code === '23502') { // Error de campo nulo (violación de restricción NOT NULL)
+      throw new BadRequestException('Faltan campos obligatorios');
+    }
+
+    throw new InternalServerErrorException('Por favor verificar el servidor de logs');
   }
-
   // TODO  seguir con el jwt del token la siguiente parte sigue en las interfaces tengo que hacerlas,tambien en auth module esta el jwt que lo conecto ahi con en .env,el controller lo puedo poner cuando termino todo el auth ya que es separado de los productos es como otra pagina aparte 
 
 

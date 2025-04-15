@@ -1,13 +1,18 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm'; // Importar TypeOrmModule
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { PortfolioService } from './portfolio.service';
 import { PortfolioController } from './portfolio.controller';
-import { PortfolioItem } from './entities/portfolio.entity'; // Importar la entidad
-import { User } from 'src/users/entities/user.entity';
+import { PortfolioItem } from './entities/portfolio.entity';
+import { User } from 'src/auth/entities/user.entity';
 import { UsersModule } from 'src/users/users.module';
+import { PassportModule } from '@nestjs/passport';  // <-- agregás esto
 
 @Module({
-  imports: [TypeOrmModule.forFeature([PortfolioItem,User]),UsersModule], // Registrar la entidad
+  imports: [
+    TypeOrmModule.forFeature([PortfolioItem, User]),
+    UsersModule,
+    PassportModule.register({ defaultStrategy: 'jwt' })  // <-- y esto también
+  ],
   controllers: [PortfolioController],
   providers: [PortfolioService],
 })
