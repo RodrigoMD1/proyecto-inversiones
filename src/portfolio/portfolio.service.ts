@@ -6,6 +6,7 @@ import { User } from '../auth/entities/user.entity';  // Importar la entidad Use
 import { CreatePortfolioDto } from './dto/create-portfolio.dto';
 import { UpdatePortfolioDto } from './dto/update-portfolio.dto';
 
+
 @Injectable()
 export class PortfolioService {
 
@@ -55,9 +56,12 @@ export class PortfolioService {
   ////////////////////////////////////////////////////////////////////////////////////////////////////
   // Obtener todos los portfolios de un usuario específico
   async findByUser(userId: string) {
-    return this.portfolioRepository.find({
+    const dd = await this.portfolioRepository.find({
       where: { user: { id: userId } },
+
     });
+    console.log(dd);
+    return dd;
   }
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////

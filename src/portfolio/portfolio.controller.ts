@@ -23,18 +23,18 @@ export class PortfolioController {
 
   @Get(':id')
   @Auth(ValidRoles.usuario)
-  async findOne(@Param('id') id: string) {
-    const portfolio = await this.portfolioService.findOne(+id);
+  async findOne(@Param('id') id: number) {
+    const portfolio = await this.portfolioService.findOne(id);
     if (!portfolio) {
       throw new NotFoundException('Portfolio not found');
     }
     return portfolio;
   }
-  
+
   @Patch(':id')
   @Auth(ValidRoles.usuario)
-  async update(@Param('id') id: string, @Body() updatePortfolioDto: UpdatePortfolioDto) {
-    const portfolio = await this.portfolioService.update(+id, updatePortfolioDto);
+  async update(@Param('id') id: number, @Body() updatePortfolioDto: UpdatePortfolioDto) {
+    const portfolio = await this.portfolioService.update(id, updatePortfolioDto);
     if (!portfolio) {
       throw new NotFoundException('Portfolio not found');
     }
@@ -50,7 +50,7 @@ export class PortfolioController {
   @Get('statistics/:userId')
   @Auth(ValidRoles.usuario)
   async getStatistics(@Param('userId') userId: string) {
-  
+
     const totalStats = await this.portfolioService.getStatistics(userId);
     const rankedAssets = await this.portfolioService.getRankedAssets(userId);
     const summaryByType = await this.portfolioService.getSummaryByType(userId);

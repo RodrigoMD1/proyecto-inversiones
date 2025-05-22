@@ -5,6 +5,7 @@ import { User } from '../../auth/entities/user.entity'; // Asegúrate de importa
 export class PortfolioItem {
   @PrimaryGeneratedColumn()
   id: number;
+  
 
   @Column()
   name: string; // Nombre del activo (ej. 'Tesla', 'Bitcoin')
