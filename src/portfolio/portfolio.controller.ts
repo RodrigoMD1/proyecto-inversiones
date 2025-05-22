@@ -23,8 +23,9 @@ export class PortfolioController {
 
   @Get(':id')
   @Auth(ValidRoles.usuario)
-  async findOne(@Param('id') id: number) {
-    const portfolio = await this.portfolioService.findOne(id);
+  async findOne(@Param('id') id: string) {
+    // id es number autoincremental, así que lo convertimos a number
+    const portfolio = await this.portfolioService.findOne(Number(id));
     if (!portfolio) {
       throw new NotFoundException('Portfolio not found');
     }
@@ -33,8 +34,8 @@ export class PortfolioController {
 
   @Patch(':id')
   @Auth(ValidRoles.usuario)
-  async update(@Param('id') id: number, @Body() updatePortfolioDto: UpdatePortfolioDto) {
-    const portfolio = await this.portfolioService.update(id, updatePortfolioDto);
+  async update(@Param('id') id: string, @Body() updatePortfolioDto: UpdatePortfolioDto) {
+    const portfolio = await this.portfolioService.update(Number(id), updatePortfolioDto);
     if (!portfolio) {
       throw new NotFoundException('Portfolio not found');
     }
@@ -44,13 +45,13 @@ export class PortfolioController {
   @Get('/user/:userId')
   @Auth(ValidRoles.usuario)
   findByUser(@Param('userId') userId: string) {
+    // userId es UUID string
     return this.portfolioService.findByUser(userId);
   }
 
   @Get('statistics/:userId')
   @Auth(ValidRoles.usuario)
   async getStatistics(@Param('userId') userId: string) {
-
     const totalStats = await this.portfolioService.getStatistics(userId);
     const rankedAssets = await this.portfolioService.getRankedAssets(userId);
     const summaryByType = await this.portfolioService.getSummaryByType(userId);
@@ -64,10 +65,11 @@ export class PortfolioController {
     };
   }
 
-  @Delete(':id')
+  @Delete('item/:id')
   @Auth(ValidRoles.usuario)
   async remove(@Param('id') id: string) {
-    const result = await this.portfolioService.remove(+id);
+    // id es number autoincremental, así que lo convertimos a number
+    const result = await this.portfolioService.remove(Number(id));
     if (result.affected === 0) {
       throw new NotFoundException('Portfolio not found');
     }
