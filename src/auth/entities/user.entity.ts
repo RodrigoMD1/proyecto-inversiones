@@ -1,5 +1,5 @@
 
-import { PortfolioItem } from "src/portfolio/entities/portfolio.entity";
+import { PortfolioItem } from "../../portfolio/entities/portfolio.entity";
 import { BeforeInsert, BeforeUpdate, Column, Entity, OneToMany, PrimaryGeneratedColumn, } from "typeorm";
 
 

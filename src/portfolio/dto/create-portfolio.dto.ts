@@ -1,28 +1,31 @@
 import { IsString, IsNotEmpty, IsNumber } from 'class-validator';
 
-
 export class CreatePortfolioDto {
   @IsString()
   @IsNotEmpty()
-  name: string; // Nombre del activo (ej. 'Tesla', 'Bitcoin')
+  name: string;
 
   @IsString()
   @IsNotEmpty()
-  description: string; // Descripción del activo
+  description: string;
 
   @IsString()
   @IsNotEmpty()
-  type: string; // Tipo de activo (ej. 'Stock', 'Cryptocurrency', 'Bond', etc.)
+  type: string;
 
   @IsNumber()
   @IsNotEmpty()
-  quantity: number; // Cantidad de activos (ej. 10 acciones, 5 BTC)
+  quantity: number;
 
   @IsNumber()
   @IsNotEmpty()
-  purchase_price: number; // Precio de compra por unidad del activo
+  purchase_price: number;
 
   @IsString()
   @IsNotEmpty()
-  user_id: string; // ID del usuario asociado a este activo
+  user_id: string;
+
+  @IsString()
+  @IsNotEmpty()
+  purchase_date: string;
 }
