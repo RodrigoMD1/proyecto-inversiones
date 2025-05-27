@@ -35,6 +35,7 @@ export class PortfolioService {
       type: data.type,
       quantity: data.quantity,
       purchase_price: data.purchase_price,
+      purchase_date: new Date(data.purchase_date),
       user: user,  // Relacionamos el usuario con el portfolio
     });
 
