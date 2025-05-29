@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, NotFoundException, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, NotFoundException, Query, BadRequestException } from '@nestjs/common';
 import { PortfolioService } from './portfolio.service';
 import { CreatePortfolioDto } from './dto/create-portfolio.dto';
 import { UpdatePortfolioDto } from './dto/update-portfolio.dto';
@@ -83,13 +83,11 @@ export class PortfolioController {
     return { message: 'Portfolio successfully removed' };
   }
 
-  @Get('history/:userId')
-  @Auth(ValidRoles.usuario)
-  async getPortfolioHistory(
-    @Param('userId') userId: string,
-    @Query('from') from: string,
-    @Query('to') to: string
-  ) {
-    return await this.portfolioService.getPortfolioHistory(userId, from, to);
+  @Get('history/:id')
+  async getPortfolioHistory(@Param('id') id: string, @Query('from') from: string, @Query('to') to: string) {
+    if (!id || id === "undefined") {
+      throw new BadRequestException('ID de usuario inválido');
+    }
+    return this.portfolioService.getPortfolioHistory(id, from, to);
   }
 }

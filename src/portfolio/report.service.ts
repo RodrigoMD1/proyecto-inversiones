@@ -62,4 +62,14 @@ export class ReportService {
       html,
     });
   }
+
+  async generateReport(userId: string) {
+    const stats = await this.portfolioService.getStatistics(userId);
+    return `
+      <h2>Reporte de tu Portfolio</h2>
+      <p>Valor total: $${stats.totalValue}</p>
+      <p>Precio promedio ponderado: $${stats.weightedAveragePrice}</p>
+      <p>Distribución: ${JSON.stringify(stats.distribution)}</p>
+    `;
+  }
 }

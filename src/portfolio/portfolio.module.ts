@@ -7,6 +7,7 @@ import { User } from 'src/auth/entities/user.entity';
 import { UsersModule } from 'src/users/users.module';
 import { PassportModule } from '@nestjs/passport';
 import { ReportService } from './report.service';
+import { ReportController } from './report.controller'; // <-- importa el nuevo controlador
 
 @Module({
   imports: [
@@ -14,7 +15,7 @@ import { ReportService } from './report.service';
     UsersModule,
     PassportModule.register({ defaultStrategy: 'jwt' })
   ],
-  controllers: [PortfolioController], // Solo controladores aquí
-  providers: [PortfolioService, ReportService], // Servicios aquí
+  controllers: [PortfolioController, ReportController], // <-- agrega aquí el controlador de reportes
+  providers: [PortfolioService, ReportService],
 })
 export class PortfolioModule {}
