@@ -70,23 +70,24 @@ export class UsersService {
   }
 
   // Reenviar email de verificación
-  async resendVerification(id: string) {
-    const user = await this.repo.findOne({ where: { id } });
-    if (!user) return { message: 'Usuario no encontrado.' };
+ async resendVerification(id: string) {
+  const user = await this.repo.findOne({ where: { id } });
+  if (!user) return { message: 'Usuario no encontrado.' };
 
-    const verificationToken = randomBytes(32).toString('hex');
-    user.emailVerificationToken = verificationToken;
-    await this.repo.save(user);
+  const verificationToken = randomBytes(32).toString('hex');
+  user.emailVerificationToken = verificationToken;
+  await this.repo.save(user);
 
-    // Enviar email de verificación
-    const verificationUrl = `https://TU_DOMINIO.com/verify-email?token=${verificationToken}`;
-    await this.reportService.sendEmail(
-      user.email,
-      'Verifica tu email',
-      `<p>Haz clic en el siguiente enlace para verificar tu email:</p>
-       <a href="${verificationUrl}">${verificationUrl}</a>`
-    );
+  // Usa tu dominio real aquí:
+  const verificationUrl = `https://financepr.netlify.app/verify-email?token=${verificationToken}`;
+  await this.reportService.sendEmail(
+    user.email,
+    'Verifica tu email',
+    `<p>Haz clic en el siguiente enlace para verificar tu email:</p>
+     <a href="${verificationUrl}">${verificationUrl}</a>`
+  );
 
-    return { message: 'Correo de verificación reenviado.' };
+  return { message: 'Correo de verificación reenviado.' };
+
   }
 }
