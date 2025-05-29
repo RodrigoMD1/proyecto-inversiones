@@ -51,4 +51,9 @@ export class UsersController {
     }
     return { message: 'Token inválido o expirado.' };
   }
+
+  @Post('resend-verification/:id')
+async resendVerification(@Param('id') id: string) {
+  return this.usersService.resendVerification(id);
+}
 }

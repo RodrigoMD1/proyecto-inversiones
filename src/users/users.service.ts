@@ -5,10 +5,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../auth/entities/user.entity';
 import { Repository } from 'typeorm';
 import { randomBytes } from 'crypto';
+import { ReportService } from 'src/portfolio/report.service';
 
 @Injectable()
 export class UsersService {
-  constructor(@InjectRepository(User) private repo: Repository<User>) { }
+  constructor(
+    @InjectRepository(User) private repo: Repository<User>,
+    private readonly reportService: ReportService // Inyecta el servicio de email
+  ) { }
 
   // Crear usuario y enviar email de verificación
   async create(createUserDto: CreateUserDto) {
@@ -20,15 +24,14 @@ export class UsersService {
     });
     const savedUser = await this.repo.save(user);
 
-    // Aquí deberías enviar el email de verificación (puedes inyectar ReportService o usar un EmailService)
-    // Ejemplo:
-    // const verificationUrl = `https://TU_DOMINIO.com/verify-email?token=${verificationToken}`;
-    // await this.reportService.sendEmail(
-    //   savedUser.email,
-    //   'Verifica tu email',
-    //   `<p>Haz clic en el siguiente enlace para verificar tu email:</p>
-    //    <a href="${verificationUrl}">${verificationUrl}</a>`
-    // );
+    // Enviar email de verificación
+    const verificationUrl = `https://financepr.netlify.app/verify-email?token=${verificationToken}`;
+    await this.reportService.sendEmail(
+      savedUser.email,
+      'Verifica tu email',
+      `<p>Haz clic en el siguiente enlace para verificar tu email:</p>
+       <a href="${verificationUrl}">${verificationUrl}</a>`
+    );
 
     return savedUser;
   }
@@ -64,5 +67,26 @@ export class UsersService {
     user.emailVerificationToken = null;
     await this.repo.save(user);
     return user;
+  }
+
+  // Reenviar email de verificación
+  async resendVerification(id: string) {
+    const user = await this.repo.findOne({ where: { id } });
+    if (!user) return { message: 'Usuario no encontrado.' };
+
+    const verificationToken = randomBytes(32).toString('hex');
+    user.emailVerificationToken = verificationToken;
+    await this.repo.save(user);
+
+    // Enviar email de verificación
+    const verificationUrl = `https://TU_DOMINIO.com/verify-email?token=${verificationToken}`;
+    await this.reportService.sendEmail(
+      user.email,
+      'Verifica tu email',
+      `<p>Haz clic en el siguiente enlace para verificar tu email:</p>
+       <a href="${verificationUrl}">${verificationUrl}</a>`
+    );
+
+    return { message: 'Correo de verificación reenviado.' };
   }
 }
