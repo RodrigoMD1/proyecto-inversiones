@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, NotFoundException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, NotFoundException, Query } from '@nestjs/common';
 import { PortfolioService } from './portfolio.service';
 import { CreatePortfolioDto } from './dto/create-portfolio.dto';
 import { UpdatePortfolioDto } from './dto/update-portfolio.dto';
@@ -24,7 +24,6 @@ export class PortfolioController {
   @Get(':id')
   @Auth(ValidRoles.usuario)
   async findOne(@Param('id') id: string) {
-    // id es number autoincremental, así que lo convertimos a number
     const portfolio = await this.portfolioService.findOne(Number(id));
     if (!portfolio) {
       throw new NotFoundException('Portfolio not found');
@@ -45,7 +44,6 @@ export class PortfolioController {
   @Get('/user/:userId')
   @Auth(ValidRoles.usuario)
   findByUser(@Param('userId') userId: string) {
-    // userId es UUID string
     return this.portfolioService.findByUser(userId);
   }
 
@@ -65,10 +63,19 @@ export class PortfolioController {
     };
   }
 
+  // NUEVO: Endpoint para rendimiento histórico
+  @Get('performance/:userId')
+  @Auth(ValidRoles.usuario)
+  async getPerformanceByDate(
+    @Param('userId') userId: string,
+    @Query('date') date: string
+  ) {
+    return await this.portfolioService.getPerformanceByDate(userId, date);
+  }
+
   @Delete('item/:id')
   @Auth(ValidRoles.usuario)
   async remove(@Param('id') id: string) {
-    // id es number autoincremental, así que lo convertimos a number
     const result = await this.portfolioService.remove(Number(id));
     if (result.affected === 0) {
       throw new NotFoundException('Portfolio not found');
