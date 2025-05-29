@@ -7,7 +7,7 @@ import { CreatePortfolioDto } from './dto/create-portfolio.dto';
 import { UpdatePortfolioDto } from './dto/update-portfolio.dto';
 import fetch from 'node-fetch';
 
-const FINNHUB_API_KEY = 'd0s0inhr01qumepgus20d0s0inhr01qumepgus2g'; // Reemplaza por tu API key de Finnhub
+const FINNHUB_API_KEY = 'd0s0inhr01qumepgus20d0s0inhr01qumepgus2g'; // Tu API key de Finnhub
 
 @Injectable()
 export class PortfolioService {
@@ -197,7 +197,7 @@ export class PortfolioService {
     };
   }
 
-  // NUEVO: Obtener rendimiento histórico por fecha (cripto y acciones)
+  // Obtener rendimiento histórico por fecha (cripto y acciones)
   async getPerformanceByDate(userId: string, date: string) {
     const items = await this.portfolioRepository.find({
       where: { user: { id: userId } },
@@ -257,5 +257,56 @@ export class PortfolioService {
     }));
 
     return results;
+  }
+
+  // NUEVO: Obtener la evolución histórica del valor total del portfolio
+  async getPortfolioHistory(userId: string, from: string, to: string) {
+    const items = await this.portfolioRepository.find({
+      where: { user: { id: userId } },
+    });
+
+    // Genera un array de fechas entre from y to (YYYY-MM-DD)
+    const start = new Date(from);
+    const end = new Date(to);
+    const dates: string[] = [];
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      dates.push(new Date(d).toISOString().slice(0, 10));
+    }
+
+    // Para cada fecha, calcula el valor total del portfolio
+    const history = await Promise.all(dates.map(async date => {
+      let total = 0;
+      for (const item of items) {
+        // Solo considera activos comprados antes o ese día
+        if (new Date(item.purchase_date) <= new Date(date)) {
+          let price = Number(item.purchase_price);
+          // Si es cripto, busca el precio histórico
+          if (item.type === 'Criptomoneda') {
+            const [year, month, day] = date.split('-');
+            const formattedDate = `${day}-${month}-${year}`;
+            try {
+              const res = await fetch(`https://api.coingecko.com/api/v3/coins/${item.ticker}/history?date=${formattedDate}`);
+              const data = await res.json();
+              price = data?.market_data?.current_price?.usd || price;
+            } catch { }
+          }
+          // Si es acción, busca el precio histórico con Finnhub
+          if (item.type === 'Acción') {
+            try {
+              const fromTs = Math.floor(new Date(date).getTime() / 1000);
+              const toTs = fromTs;
+              const res = await fetch(`https://finnhub.io/api/v1/stock/candle?symbol=${item.ticker}&resolution=D&from=${fromTs}&to=${toTs}&token=${FINNHUB_API_KEY}`);
+              const data = await res.json();
+              const closePrices = data.c;
+              price = closePrices && closePrices.length > 0 ? closePrices[closePrices.length - 1] : price;
+            } catch { }
+          }
+          total += price * Number(item.quantity);
+        }
+      }
+      return { date, total };
+    }));
+
+    return history;
   }
 }

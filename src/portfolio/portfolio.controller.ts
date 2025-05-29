@@ -82,4 +82,14 @@ export class PortfolioController {
     }
     return { message: 'Portfolio successfully removed' };
   }
+
+  @Get('history/:userId')
+  @Auth(ValidRoles.usuario)
+  async getPortfolioHistory(
+    @Param('userId') userId: string,
+    @Query('from') from: string,
+    @Query('to') to: string
+  ) {
+    return await this.portfolioService.getPortfolioHistory(userId, from, to);
+  }
 }
