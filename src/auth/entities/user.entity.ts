@@ -28,7 +28,20 @@ export class User {
     roles: string[];
 
     @OneToMany(() => PortfolioItem, (item) => item.user)
-portfolio: PortfolioItem[];
+    portfolio: PortfolioItem[];
+
+
+    @Column({ default: false })
+    reportEnabled: boolean;
+
+    @Column({ default: 'daily' })
+    reportFrequency: string; // 'daily', 'weekly', etc.
+
+    @Column({ default: false })
+    emailVerified: boolean;
+
+    @Column({ nullable: true })
+    emailVerificationToken: string;
 
     /////////////////////////////////////////////////////
 
