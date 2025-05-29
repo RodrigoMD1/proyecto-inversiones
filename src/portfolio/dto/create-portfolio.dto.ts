@@ -28,4 +28,8 @@ export class CreatePortfolioDto {
   @IsString()
   @IsNotEmpty()
   purchase_date: string;
+
+  @IsString()
+  @IsNotEmpty()
+  ticker: string;
 }

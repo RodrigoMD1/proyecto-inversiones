@@ -27,4 +27,7 @@ export class PortfolioItem {
   @ManyToOne(() => User, (user) => user.portfolio, { eager: true })
   @JoinColumn({ name: 'user_id' })
   user: User;
+
+  @Column()
+  ticker: string;
 }
