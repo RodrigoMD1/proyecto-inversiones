@@ -28,6 +28,6 @@ export class PortfolioItem {
   @JoinColumn({ name: 'user_id' })
   user: User;
 
-  @Column()
+  @Column({ nullable: true })
   ticker: string;
 }
