@@ -1,6 +1,7 @@
 import { Controller, Get, Req, Res, UseGuards } from '@nestjs/common';
 import { Response, Request } from 'express';
 import { AuthGuard } from '@nestjs/passport';
+// Cambia la importación de PDFKit:
 import PDFDocument from 'pdfkit';
 import { ReportService } from './report.service';
 
