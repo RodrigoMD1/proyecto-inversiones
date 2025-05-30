@@ -63,6 +63,17 @@ export class ReportService {
     });
   }
 
+  // Generar datos para el PDF o HTML del reporte
+  async generateReportData(userId: string) {
+    const stats = await this.portfolioService.getStatistics(userId);
+    return {
+      totalValue: stats.totalValue,
+      weightedAveragePrice: stats.weightedAveragePrice,
+      distribution: stats.distribution,
+    };
+  }
+
+  // Generar reporte en HTML (para descarga manual)
   async generateReport(userId: string) {
     const stats = await this.portfolioService.getStatistics(userId);
     return `
