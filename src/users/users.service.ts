@@ -4,11 +4,14 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../auth/entities/user.entity';
 import { Repository } from 'typeorm';
+import { randomBytes } from 'crypto';
+import { ReportService } from 'src/portfolio/report.service';
 
 @Injectable()
 export class UsersService {
   constructor(
-    @InjectRepository(User) private repo: Repository<User>
+    @InjectRepository(User) private repo: Repository<User>,
+    private readonly reportService: ReportService // Inyecta el servicio de email si usas sendEmail
   ) { }
 
   // Solo para uso interno o admin, no para registro público
@@ -54,11 +57,23 @@ export class UsersService {
     return user;
   }
 
-  // Reenviar email de verificación (opcional, si lo usas desde aquí)
-  // Si no lo usas, puedes eliminar este método
-  /*
+  // Reenviar email de verificación
   async resendVerification(id: string) {
-    // Implementar si lo necesitas
+    const user = await this.repo.findOne({ where: { id } });
+    if (!user) return { message: 'Usuario no encontrado.' };
+
+    const verificationToken = randomBytes(32).toString('hex');
+    user.emailVerificationToken = verificationToken;
+    await this.repo.save(user);
+
+    const verificationUrl = `https://financepr.netlify.app/verify-email?token=${verificationToken}`;
+    await this.reportService.sendEmail(
+      user.email,
+      'Verifica tu email',
+      `<p>Haz clic en el siguiente enlace para verificar tu email:</p>
+       <a href="${verificationUrl}">${verificationUrl}</a>`
+    );
+
+    return { message: 'Correo de verificación reenviado.' };
   }
-  */
 }
