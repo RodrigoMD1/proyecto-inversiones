@@ -24,7 +24,6 @@ export class AuthService {
     try {
       const { password, ...userData } = createUserDto;
       const hashedPassword = bcrypt.hashSync(password, 15);
-      console.log('Contraseña cifrada:', hashedPassword);
 
       // Generar token de verificación
       const verificationToken = randomBytes(32).toString('hex');
@@ -42,14 +41,12 @@ export class AuthService {
 
       // Enviar email de verificación
       const verificationUrl = `https://financepr.netlify.app/verify-email?token=${verificationToken}`;
-      console.log('Enviando email de verificación a:', user.email, 'URL:', verificationUrl);
       await this.reportService.sendEmail(
         user.email,
         'Verifica tu email',
         `<p>Haz clic en el siguiente enlace para verificar tu email:</p>
          <a href="${verificationUrl}">${verificationUrl}</a>`
       );
-      console.log('Email enviado (o intentado enviar) a:', user.email);
 
       return {
         ...user,
@@ -99,7 +96,8 @@ export class AuthService {
 
   // manejador de errores 
   private handleDBErrors(error: any): void {
-    console.log(error); // Agregar log para ver el error completo
+    // Puedes dejar este log solo para desarrollo, elimínalo en producción si no lo necesitas
+    // console.log(error);
 
     if (error.code === '23505') {
       throw new BadRequestException(error.detail); // Error de clave duplicada
