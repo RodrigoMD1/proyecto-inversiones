@@ -259,6 +259,60 @@ export class PortfolioService {
     return results;
   }
 
+  // NUEVO: Obtener el rendimiento actual de cada activo
+  async getCurrentPerformance(userId: string) {
+    const items = await this.portfolioRepository.find({
+      where: { user: { id: userId } },
+    });
+
+    if (items.length === 0) return [];
+
+    const results = await Promise.all(items.map(async item => {
+      // Criptomonedas
+      if (item.type === 'Criptomoneda') {
+        try {
+          const res = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${item.ticker}&vs_currencies=usd`);
+          const data = await res.json();
+          const currentPrice = data[item.ticker]?.usd;
+          if (!currentPrice) return { ...item, rendimiento: null, currentPrice: null, tipo: 'Criptomoneda' };
+
+          const rendimiento = ((currentPrice - Number(item.purchase_price)) / Number(item.purchase_price)) * 100;
+          return {
+            ...item,
+            currentPrice,
+            rendimiento,
+            tipo: 'Criptomoneda'
+          };
+        } catch {
+          return { ...item, rendimiento: null, currentPrice: null, tipo: 'Criptomoneda' };
+        }
+      }
+      // Acciones (usando Finnhub)
+      if (item.type === 'Acción') {
+        try {
+          const res = await fetch(`https://finnhub.io/api/v1/quote?symbol=${item.ticker}&token=${FINNHUB_API_KEY}`);
+          const data = await res.json();
+          const currentPrice = data.c;
+          if (!currentPrice) return { ...item, rendimiento: null, currentPrice: null, tipo: 'Acción' };
+
+          const rendimiento = ((currentPrice - Number(item.purchase_price)) / Number(item.purchase_price)) * 100;
+          return {
+            ...item,
+            currentPrice,
+            rendimiento,
+            tipo: 'Acción'
+          };
+        } catch {
+          return { ...item, rendimiento: null, currentPrice: null, tipo: 'Acción' };
+        }
+      }
+      // Otros tipos
+      return { ...item, rendimiento: null, currentPrice: null, tipo: item.type };
+    }));
+
+    return results;
+  }
+
   // NUEVO: Obtener la evolución histórica del valor total del portfolio
   async getPortfolioHistory(userId: string, from: string, to: string) {
     const items = await this.portfolioRepository.find({
