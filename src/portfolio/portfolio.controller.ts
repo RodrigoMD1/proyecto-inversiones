@@ -90,4 +90,9 @@ export class PortfolioController {
     }
     return this.portfolioService.getPortfolioHistory(id, from, to);
   }
+
+  @Get('current-performance/:userId')
+  async getCurrentPerformance(@Param('userId') userId: string) {
+    return this.portfolioService.getCurrentPerformance(userId);
+  }
 }
