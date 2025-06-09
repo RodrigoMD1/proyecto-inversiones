@@ -26,12 +26,14 @@ export class UsersService {
 
     // Enviar email de verificación
     const verificationUrl = `https://financepr.netlify.app/verify-email?token=${verificationToken}`;
+    console.log('Llamando a sendEmail para:', savedUser.email, 'URL:', verificationUrl);
     await this.reportService.sendEmail(
       savedUser.email,
       'Verifica tu email',
       `<p>Haz clic en el siguiente enlace para verificar tu email:</p>
        <a href="${verificationUrl}">${verificationUrl}</a>`
     );
+    console.log('Email enviado (o intentado enviar) a:', savedUser.email);
 
     return savedUser;
   }
@@ -80,17 +82,15 @@ export class UsersService {
 
     // Usa tu dominio real aquí:
     const verificationUrl = `https://financepr.netlify.app/verify-email?token=${verificationToken}`;
+    console.log('Llamando a sendEmail para (resend):', user.email, 'URL:', verificationUrl);
     await this.reportService.sendEmail(
       user.email,
       'Verifica tu email',
       `<p>Haz clic en el siguiente enlace para verificar tu email:</p>
      <a href="${verificationUrl}">${verificationUrl}</a>`
     );
-
-
-    console.log('Email enviado (o intentado enviar)');
+    console.log('Email enviado (o intentado enviar) a:', user.email);
 
     return { message: 'Correo de verificación reenviado.' };
-
   }
 }
