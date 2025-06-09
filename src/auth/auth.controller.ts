@@ -17,6 +17,7 @@ export class AuthController {
   @ApiResponse({ status: 201, description: 'Usuario creado correctamente.' })
   @ApiResponse({ status: 400, description: 'Bad Request — Validación fallida.' })
   createUser(@Body() createUserDto: CreateUserDto) {
+    console.log('Entró al endpoint /api/auth/registro', createUserDto);
     return this.authService.create(createUserDto);
   }
   ////////////////////////////////////////////////////////////////////

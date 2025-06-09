@@ -6,53 +6,62 @@ import { CreateUserDto, LoginUserDto } from './dto';
 import * as bcrypt from 'bcrypt';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { JwtService } from '@nestjs/jwt';
-
-
+import { randomBytes } from 'crypto';
+import { ReportService } from 'src/portfolio/report.service';
 
 @Injectable()
 export class AuthService {
 
   constructor(
     @InjectRepository(User)
-
     private readonly userRepository: Repository<User>,
     private readonly jwtService: JwtService,
-
+    private readonly reportService: ReportService, // Inyecta el servicio de email
   ) { }
-
 
   ////////////////////////////////////////////////////////////////////
   async create(createUserDto: CreateUserDto) {
     try {
-
       const { password, ...userData } = createUserDto;
       const hashedPassword = bcrypt.hashSync(password, 15);
-      console.log('Contraseña cifrada:', hashedPassword); // Agregar log de la contraseña cifrada
+      console.log('Contraseña cifrada:', hashedPassword);
 
+      // Generar token de verificación
+      const verificationToken = randomBytes(32).toString('hex');
 
+      // Crear usuario con el token y emailVerified en false
       const user = this.userRepository.create({
         ...userData,
-        password: bcrypt.hashSync(password, 15)
-
+        password: hashedPassword,
+        emailVerified: false,
+        emailVerificationToken: verificationToken,
       });
 
-      await this.userRepository.save(user)
-      delete user.password
+      await this.userRepository.save(user);
+      delete user.password;
+
+      // Enviar email de verificación
+      const verificationUrl = `https://financepr.netlify.app/verify-email?token=${verificationToken}`;
+      console.log('Enviando email de verificación a:', user.email, 'URL:', verificationUrl);
+      await this.reportService.sendEmail(
+        user.email,
+        'Verifica tu email',
+        `<p>Haz clic en el siguiente enlace para verificar tu email:</p>
+         <a href="${verificationUrl}">${verificationUrl}</a>`
+      );
+      console.log('Email enviado (o intentado enviar) a:', user.email);
 
       return {
         ...user,
         token: this.getJwtToken({ id: user.id })
       }
     } catch (error) {
-
       this.handleDBErrors(error);
-
     }
   }
   ////////////////////////////////////////////////////////////////////
 
   async login(loginUserDto: LoginUserDto) {
-
     const { password, email } = loginUserDto;
 
     const user = await this.userRepository.findOne({
@@ -70,13 +79,11 @@ export class AuthService {
       ...user,
       token: this.getJwtToken({ id: user.id })
     };
-
   }
 
   ////////////////////////////////////////////////////////////////////
 
   private getJwtToken(payload: JwtPayload) {
-
     const token = this.jwtService.sign(payload);
     return token;
   }
@@ -90,10 +97,7 @@ export class AuthService {
   }
   ////////////////////////////////////////////////////////////////////
 
-
-
   // manejador de errores 
-
   private handleDBErrors(error: any): void {
     console.log(error); // Agregar log para ver el error completo
 
@@ -108,9 +112,4 @@ export class AuthService {
 
     throw new InternalServerErrorException('Por favor verificar el servidor de logs');
   }
- 
-
-
-
-
 }

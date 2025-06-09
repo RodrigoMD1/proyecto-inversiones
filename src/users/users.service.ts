@@ -4,38 +4,21 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../auth/entities/user.entity';
 import { Repository } from 'typeorm';
-import { randomBytes } from 'crypto';
-import { ReportService } from 'src/portfolio/report.service';
 
 @Injectable()
 export class UsersService {
   constructor(
-    @InjectRepository(User) private repo: Repository<User>,
-    private readonly reportService: ReportService // Inyecta el servicio de email
+    @InjectRepository(User) private repo: Repository<User>
   ) { }
 
-  // Crear usuario y enviar email de verificación
+  // Solo para uso interno o admin, no para registro público
   async create(createUserDto: CreateUserDto) {
-    const verificationToken = randomBytes(32).toString('hex');
     const user = this.repo.create({
       ...createUserDto,
       emailVerified: false,
-      emailVerificationToken: verificationToken,
+      emailVerificationToken: null,
     });
-    const savedUser = await this.repo.save(user);
-
-    // Enviar email de verificación
-    const verificationUrl = `https://financepr.netlify.app/verify-email?token=${verificationToken}`;
-    console.log('Llamando a sendEmail para:', savedUser.email, 'URL:', verificationUrl);
-    await this.reportService.sendEmail(
-      savedUser.email,
-      'Verifica tu email',
-      `<p>Haz clic en el siguiente enlace para verificar tu email:</p>
-       <a href="${verificationUrl}">${verificationUrl}</a>`
-    );
-    console.log('Email enviado (o intentado enviar) a:', savedUser.email);
-
-    return savedUser;
+    return this.repo.save(user);
   }
 
   findAll() {
@@ -71,26 +54,11 @@ export class UsersService {
     return user;
   }
 
-  // Reenviar email de verificación
+  // Reenviar email de verificación (opcional, si lo usas desde aquí)
+  // Si no lo usas, puedes eliminar este método
+  /*
   async resendVerification(id: string) {
-    const user = await this.repo.findOne({ where: { id } });
-    if (!user) return { message: 'Usuario no encontrado.' };
-
-    const verificationToken = randomBytes(32).toString('hex');
-    user.emailVerificationToken = verificationToken;
-    await this.repo.save(user);
-
-    // Usa tu dominio real aquí:
-    const verificationUrl = `https://financepr.netlify.app/verify-email?token=${verificationToken}`;
-    console.log('Llamando a sendEmail para (resend):', user.email, 'URL:', verificationUrl);
-    await this.reportService.sendEmail(
-      user.email,
-      'Verifica tu email',
-      `<p>Haz clic en el siguiente enlace para verificar tu email:</p>
-     <a href="${verificationUrl}">${verificationUrl}</a>`
-    );
-    console.log('Email enviado (o intentado enviar) a:', user.email);
-
-    return { message: 'Correo de verificación reenviado.' };
+    // Implementar si lo necesitas
   }
+  */
 }
