@@ -108,7 +108,7 @@ export class AuthService {
 
     throw new InternalServerErrorException('Por favor verificar el servidor de logs');
   }
-  // TODO  seguir con el jwt del token la siguiente parte sigue en las interfaces tengo que hacerlas,tambien en auth module esta el jwt que lo conecto ahi con en .env,el controller lo puedo poner cuando termino todo el auth ya que es separado de los productos es como otra pagina aparte 
+ 
 
 
 
