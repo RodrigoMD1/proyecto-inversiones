@@ -7,35 +7,24 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './strategies/jwt-strategy';
-
+import { PortfolioModule } from '../portfolio/portfolio.module'; // <-- importa el módulo
 
 @Module({
   controllers: [AuthController],
-  providers: [AuthService,JwtStrategy],
+  providers: [AuthService, JwtStrategy],
   imports: [
-
     ConfigModule,
-
     TypeOrmModule.forFeature([User]),
-
     PassportModule.register({ defaultStrategy: 'jwt' }),
-
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => {
-
-        return {
-          secret: configService.get('JWT_SECRET'),
-          signOptions: {
-            expiresIn: '6h'
-          }
-        }
-      }
-    })
-
-
-
+      useFactory: (configService: ConfigService) => ({
+        secret: configService.get('JWT_SECRET'),
+        signOptions: { expiresIn: '6h' }
+      })
+    }),
+    PortfolioModule // <-- agrega esta línea
   ],
   exports: [TypeOrmModule, JwtStrategy, PassportModule, JwtModule]
 })

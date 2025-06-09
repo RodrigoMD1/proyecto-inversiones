@@ -15,7 +15,8 @@ import { ReportController } from './report.controller'; // <-- importa el nuevo 
     UsersModule,
     PassportModule.register({ defaultStrategy: 'jwt' })
   ],
-  controllers: [PortfolioController, ReportController], // <-- agrega aquí el controlador de reportes
+  controllers: [PortfolioController, ReportController],
   providers: [PortfolioService, ReportService],
+  exports: [ReportService], // <-- agrega esta línea
 })
 export class PortfolioModule {}
