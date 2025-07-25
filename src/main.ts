@@ -19,9 +19,15 @@ async function bootstrap() {
 
    //Habilitar CORS para múltiples orígenes
    app.enableCors({
-    origin: ['http://localhost:5173', 'https://financepr.netlify.app'], // URLs permitidas
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    origin: [
+      'http://localhost:5173', 
+      'http://localhost:5174', // Agregado el puerto 5174
+      'http://localhost:3000', // Puerto del backend para testing
+      'https://financepr.netlify.app'
+    ], // URLs permitidas
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization'],
    });
 
 
