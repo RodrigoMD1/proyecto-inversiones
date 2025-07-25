@@ -23,10 +23,6 @@ export class CreatePortfolioDto {
 
   @IsString()
   @IsNotEmpty()
-  user_id: string;
-
-  @IsString()
-  @IsNotEmpty()
   purchase_date: string;
 
   @IsString()

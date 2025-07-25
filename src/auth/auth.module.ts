@@ -7,7 +7,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './strategies/jwt-strategy';
-import { PortfolioModule } from '../portfolio/portfolio.module'; // <-- importa el módulo
+import { EmailModule } from 'src/email/email.module';
 
 @Module({
   controllers: [AuthController],
@@ -16,6 +16,7 @@ import { PortfolioModule } from '../portfolio/portfolio.module'; // <-- importa 
     ConfigModule,
     TypeOrmModule.forFeature([User]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
+    EmailModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -24,7 +25,6 @@ import { PortfolioModule } from '../portfolio/portfolio.module'; // <-- importa 
         signOptions: { expiresIn: '6h' }
       })
     }),
-    PortfolioModule // <-- agrega esta línea
   ],
   exports: [TypeOrmModule, JwtStrategy, PassportModule, JwtModule]
 })

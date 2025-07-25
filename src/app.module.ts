@@ -10,6 +10,7 @@ import { NewsModule } from './news/news.module';
 import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 import { PaymentsModule } from './payments/payments.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
+import { EmailModule } from './email/email.module';
 
 import { User } from './auth/entities/user.entity';
 import { Asset } from './assets/entities/asset.entity';
@@ -40,6 +41,7 @@ import { Payment } from './payments/entities/payment.entity';
     SubscriptionsModule,
     PaymentsModule,
     WebhooksModule,
+    EmailModule,
   ],
 })
 export class AppModule {}

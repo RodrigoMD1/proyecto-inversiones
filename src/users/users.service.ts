@@ -1,17 +1,18 @@
-import { Injectable } from '@nestjs/common';
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { User } from '../auth/entities/user.entity';
+import { User } from 'src/auth/entities/user.entity';
 import { Repository } from 'typeorm';
 import { randomBytes } from 'crypto';
-import { ReportService } from 'src/portfolio/report.service';
+import { EmailService } from 'src/email/email.service';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User) private repo: Repository<User>,
-    private readonly reportService: ReportService // Inyecta el servicio de email si usas sendEmail
+    private readonly emailService: EmailService // Inyecta el servicio de email
   ) { }
 
   // Solo para uso interno o admin, no para registro público
@@ -67,12 +68,24 @@ export class UsersService {
     await this.repo.save(user);
 
     const verificationUrl = `https://financepr.netlify.app/verify-email?token=${verificationToken}`;
-    await this.reportService.sendEmail(
-      user.email,
-      'Verifica tu email',
-      `<p>Haz clic en el siguiente enlace para verificar tu email:</p>
-       <a href="${verificationUrl}">${verificationUrl}</a>`
-    );
+    
+    // Envío de email temporalmente deshabilitado para pruebas
+    try {
+      await this.emailService.sendEmail(
+        user.email,
+        'Verifica tu email',
+        `<p>Haz clic en el siguiente enlace para verificar tu email:</p>
+         <a href="${verificationUrl}">${verificationUrl}</a>`
+      );
+    } catch (error) {
+      console.log('⚠️ Error al enviar email (modo prueba):', error.message);
+      // En modo de prueba, devolvemos el token para testing manual
+      return { 
+        message: 'Correo de verificación generado (modo prueba).', 
+        verificationToken,
+        verificationUrl 
+      };
+    }
 
     return { message: 'Correo de verificación reenviado.' };
   }

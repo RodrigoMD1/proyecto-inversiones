@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -20,14 +21,7 @@ export class PortfolioService {
   ) { }
 
   // Crear un nuevo portfolio
-  async create(data: CreatePortfolioDto): Promise<PortfolioItem> {
-    const user = await this.userRepository.findOne({
-      where: { id: String(data.user_id) },
-    });
-
-    if (!user) {
-      throw new NotFoundException('El usuario no existe');
-    }
+  async create(data: CreatePortfolioDto, user: User): Promise<PortfolioItem> {
 
     const portfolio = this.portfolioRepository.create({
       name: data.name,

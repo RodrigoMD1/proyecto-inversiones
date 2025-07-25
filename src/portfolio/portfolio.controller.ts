@@ -2,8 +2,9 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, NotFoundException, Q
 import { PortfolioService } from './portfolio.service';
 import { CreatePortfolioDto } from './dto/create-portfolio.dto';
 import { UpdatePortfolioDto } from './dto/update-portfolio.dto';
-import { Auth } from 'src/auth/decorators';
+import { Auth, GetUser } from 'src/auth/decorators';
 import { ValidRoles } from 'src/auth/interfaces';
+import { User } from 'src/auth/entities/user.entity';
 import { AssetLimitGuard } from '../guards/asset-limit.guard';
 
 @Controller('portfolio')
@@ -11,10 +12,10 @@ export class PortfolioController {
   constructor(private readonly portfolioService: PortfolioService) { }
 
   @Post()
-  @Auth(ValidRoles.usuario)
   @UseGuards(AssetLimitGuard)
-  async create(@Body() createPortfolioDto: CreatePortfolioDto) {
-    return await this.portfolioService.create(createPortfolioDto);
+  @Auth(ValidRoles.usuario)
+  async create(@Body() createPortfolioDto: CreatePortfolioDto, @GetUser() user: User) {
+    return await this.portfolioService.create(createPortfolioDto, user);
   }
 
   @Get()

@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PortfolioService } from './portfolio.service';
 import { PortfolioController } from './portfolio.controller';
@@ -10,13 +10,15 @@ import { ReportService } from './report.service';
 import { ReportController } from './report.controller'; // <-- importa el nuevo controlador
 import { AssetLimitGuard } from '../guards/asset-limit.guard';
 import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
+import { EmailModule } from '../email/email.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([PortfolioItem, User]),
     UsersModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
-    SubscriptionsModule
+    EmailModule,
+    forwardRef(() => SubscriptionsModule)
   ],
   controllers: [PortfolioController, ReportController],
   providers: [PortfolioService, ReportService, AssetLimitGuard],

@@ -7,7 +7,7 @@ import * as bcrypt from 'bcrypt';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { JwtService } from '@nestjs/jwt';
 import { randomBytes } from 'crypto';
-import { ReportService } from 'src/portfolio/report.service';
+import { EmailService } from 'src/email/email.service';
 
 @Injectable()
 export class AuthService {
@@ -16,7 +16,7 @@ export class AuthService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     private readonly jwtService: JwtService,
-    private readonly reportService: ReportService, // Inyecta el servicio de email
+    private readonly emailService: EmailService, // Inyecta el servicio de email
   ) { }
 
   ////////////////////////////////////////////////////////////////////
@@ -39,14 +39,14 @@ export class AuthService {
       await this.userRepository.save(user);
       delete user.password;
 
-      // Enviar email de verificación
-      const verificationUrl = `https://financepr.netlify.app/verify-email?token=${verificationToken}`;
-      await this.reportService.sendEmail(
+      // Enviar email de verificación - TEMPORALMENTE DESHABILITADO PARA PRUEBAS
+      /*const verificationUrl = `https://financepr.netlify.app/verify-email?token=${verificationToken}`;
+      await this.emailService.sendEmail(
         user.email,
         'Verifica tu email',
         `<p>Haz clic en el siguiente enlace para verificar tu email:</p>
          <a href="${verificationUrl}">${verificationUrl}</a>`
-      );
+      );*/
 
       return {
         ...user,

@@ -55,11 +55,11 @@ export class SubscriptionsService {
     });
 
     return {
-      currentAssets,
-      assetLimit: subscription.asset_limit,
+      current_assets: currentAssets,
+      limit: subscription.asset_limit,
+      can_add_more: currentAssets < subscription.asset_limit,
       plan: subscription.plan,
-      status: subscription.status,
-      canAddAssets: currentAssets < subscription.asset_limit
+      status: subscription.status
     };
   }
 
@@ -115,7 +115,7 @@ export class SubscriptionsService {
   // Verificar si puede agregar activos
   async canAddAsset(userId: string): Promise<boolean> {
     const usage = await this.getUsage(userId);
-    return usage.canAddAssets;
+    return usage.can_add_more;
   }
 
   // Job para verificar suscripciones expiradas

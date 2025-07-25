@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import * as nodemailer from 'nodemailer';
 import * as cron from 'node-cron';
 import { PortfolioService } from './portfolio.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../auth/entities/user.entity';
 import { Repository } from 'typeorm';
+import { EmailService } from 'src/email/email.service';
 
 @Injectable()
 export class ReportService {
@@ -12,6 +12,7 @@ export class ReportService {
     private readonly portfolioService: PortfolioService,
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    private readonly emailService: EmailService,
   ) {
     // Programa el envío diario a las 8 AM
     cron.schedule('0 8 * * *', () => {
@@ -39,28 +40,11 @@ export class ReportService {
       };
       const reportContent = this.generateStyledReportContent(user, normalizedStats, true);
       try {
-        await this.sendEmail(user.email, 'Reporte Diario de tu Portfolio', reportContent);
+        await this.emailService.sendEmail(user.email, 'Reporte Diario de tu Portfolio', reportContent);
       } catch (error) {
         console.error(`Error enviando reporte a ${user.email}:`, error.message);
       }
     }
-  }
-
-  async sendEmail(to: string, subject: string, html: string) {
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: 'rodrigomd123456@gmail.com',
-        pass: 'kzqw ggul wtau yypk',
-      },
-    });
-
-    await transporter.sendMail({
-      from: '"Finance App" <rodrigomd123456@gmail.com>',
-      to,
-      subject,
-      html,
-    });
   }
 
   // Generar datos para el PDF o HTML del reporte

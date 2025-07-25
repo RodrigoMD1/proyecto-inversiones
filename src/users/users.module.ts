@@ -4,18 +4,15 @@ import { UsersService } from './users.service';
 import { UsersController } from './users.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from '../auth/entities/user.entity';
-import { ReportService } from '../portfolio/report.service';
-import { PortfolioService } from '../portfolio/portfolio.service';
-import { TypeOrmModule as PortfolioTypeOrmModule } from '@nestjs/typeorm';
-import { PortfolioItem } from '../portfolio/entities/portfolio.entity';
+import { EmailModule } from '../email/email.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([User]),
-    PortfolioTypeOrmModule.forFeature([PortfolioItem, User]), // Para que ReportService funcione
+    EmailModule
   ],
   controllers: [UsersController],
-  providers: [UsersService, ReportService, PortfolioService],
+  providers: [UsersService],
   exports: [UsersService],
 })
 export class UsersModule { }
