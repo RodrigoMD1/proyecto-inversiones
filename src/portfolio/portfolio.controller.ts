@@ -1,9 +1,10 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, NotFoundException, Query, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, NotFoundException, Query, BadRequestException, UseGuards } from '@nestjs/common';
 import { PortfolioService } from './portfolio.service';
 import { CreatePortfolioDto } from './dto/create-portfolio.dto';
 import { UpdatePortfolioDto } from './dto/update-portfolio.dto';
 import { Auth } from 'src/auth/decorators';
 import { ValidRoles } from 'src/auth/interfaces';
+import { AssetLimitGuard } from '../guards/asset-limit.guard';
 
 @Controller('portfolio')
 export class PortfolioController {
@@ -11,6 +12,7 @@ export class PortfolioController {
 
   @Post()
   @Auth(ValidRoles.usuario)
+  @UseGuards(AssetLimitGuard)
   async create(@Body() createPortfolioDto: CreatePortfolioDto) {
     return await this.portfolioService.create(createPortfolioDto);
   }

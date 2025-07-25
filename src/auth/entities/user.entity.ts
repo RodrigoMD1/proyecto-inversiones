@@ -1,5 +1,6 @@
 
 import { PortfolioItem } from "../../portfolio/entities/portfolio.entity";
+import { Subscription } from "../../subscriptions/entities/subscription.entity";
 import { BeforeInsert, BeforeUpdate, Column, Entity, OneToMany, PrimaryGeneratedColumn, } from "typeorm";
 
 
@@ -29,6 +30,9 @@ export class User {
 
     @OneToMany(() => PortfolioItem, (item) => item.user)
     portfolio: PortfolioItem[];
+
+    @OneToMany(() => Subscription, (subscription) => subscription.user)
+    subscriptions: Subscription[];
 
 
     @Column({ default: false })
