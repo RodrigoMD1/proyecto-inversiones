@@ -61,7 +61,14 @@ export class AuthService {
 
       return {
         ...user,
-        token: this.getJwtToken({ id: user.id })
+        token: this.getJwtToken({ 
+          id: user.id,
+          userId: user.id,
+          email: user.email,
+          role: user.roles[0] || 'user', // Primer rol del array
+          roles: user.roles,
+          name: user.name
+        })
       }
     } catch (error) {
       this.handleDBErrors(error);
@@ -96,7 +103,14 @@ export class AuthService {
 
     return {
       ...user,
-      token: this.getJwtToken({ id: user.id })
+      token: this.getJwtToken({ 
+        id: user.id,
+        userId: user.id,
+        email: user.email,
+        role: user.roles[0] || 'user', // Primer rol del array
+        roles: user.roles,
+        name: user.name
+      })
     };
   }
 
@@ -111,7 +125,14 @@ export class AuthService {
   async checkAuthStatus(user: User) {
     return {
       ...user,
-      token: this.getJwtToken({ id: user.id })
+      token: this.getJwtToken({ 
+        id: user.id,
+        userId: user.id,
+        email: user.email,
+        role: user.roles[0] || 'user', // Primer rol del array
+        roles: user.roles,
+        name: user.name
+      })
     };
   }
   ////////////////////////////////////////////////////////////////////
