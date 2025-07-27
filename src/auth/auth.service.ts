@@ -25,28 +25,39 @@ export class AuthService {
       const { password, ...userData } = createUserDto;
       const hashedPassword = bcrypt.hashSync(password, 15);
 
-      // Generar token de verificación
-      const verificationToken = randomBytes(32).toString('hex');
-
-      // Crear usuario con el token y emailVerified en false
+      // Crear usuario SIN token de verificación inicialmente
       const user = this.userRepository.create({
         ...userData,
         password: hashedPassword,
         emailVerified: false,
-        emailVerificationToken: verificationToken,
+        emailVerificationToken: null, // No generar token hasta enviar el email
       });
 
       await this.userRepository.save(user);
       delete user.password;
 
-      // Enviar email de verificación - TEMPORALMENTE DESHABILITADO PARA PRUEBAS
-      /*const verificationUrl = `https://financepr.netlify.app/verify-email?token=${verificationToken}`;
-      await this.emailService.sendEmail(
-        user.email,
-        'Verifica tu email',
-        `<p>Haz clic en el siguiente enlace para verificar tu email:</p>
-         <a href="${verificationUrl}">${verificationUrl}</a>`
-      );*/
+      // Generar token y enviar email de verificación
+      const verificationToken = randomBytes(32).toString('hex');
+      
+      // Actualizar el usuario con el token
+      await this.userRepository.update(user.id, {
+        emailVerificationToken: verificationToken
+      });
+
+      try {
+        const verificationUrl = `https://financepr.netlify.app/verify-email?token=${verificationToken}`;
+        await this.emailService.sendEmail(
+          user.email,
+          'Verifica tu email',
+          `<p>Haz clic en el siguiente enlace para verificar tu email:</p>
+           <a href="${verificationUrl}">${verificationUrl}</a>`
+        );
+        console.log(`✅ Email de verificación enviado a: ${user.email}`);
+      } catch (emailError) {
+        console.log(`⚠️ Error al enviar email de verificación (modo prueba): ${emailError.message}`);
+        // En modo de desarrollo, mantener el token para pruebas manuales
+        // En producción, podrías limpiar el token si el email falla
+      }
 
       return {
         ...user,

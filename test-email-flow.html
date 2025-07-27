@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Email Verification Flow</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .log { background: #f5f5f5; padding: 10px; margin: 10px 0; border-left: 3px solid #007bff; }
+        .success { border-left-color: #28a745; }
+        .error { border-left-color: #dc3545; }
+        .warning { border-left-color: #ffc107; }
+    </style>
+</head>
+<body>
+    <h1>Test de Flujo de Verificación de Email</h1>
+    <button onclick="testEmailVerificationFlow()">Ejecutar Test</button>
+    <div id="output"></div>
+
+    <script>
+        function log(message, type = 'log') {
+            const output = document.getElementById('output');
+            const div = document.createElement('div');
+            div.className = `log ${type}`;
+            div.innerHTML = message;
+            output.appendChild(div);
+            console.log(message);
+        }
+
+        async function testEmailVerificationFlow() {
+            document.getElementById('output').innerHTML = '';
+            log('🚀 Iniciando test del flujo de verificación de email...');
+            
+            const API_URL = 'http://localhost:3000/api';
+            const uniqueEmail = `test${Date.now()}@example.com`;
+            
+            try {
+                log('1️⃣ Registrando nuevo usuario...');
+                const registerResponse = await fetch(`${API_URL}/auth/registro`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        fullName: 'Test User Email Flow',
+                        email: uniqueEmail,
+                        password: 'testpassword123'
+                    })
+                });
+
+                const registerData = await registerResponse.json();
+                log(`✅ Usuario registrado: ${registerData.email}`, 'success');
+
+                const userToken = registerData.token;
+                const userId = registerData.id;
+
+                // Verificar estado inicial del usuario
+                log('2️⃣ Verificando estado inicial del usuario...');
+                const checkUserResponse = await fetch(`${API_URL}/users/${userId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${userToken}`
+                    }
+                });
+
+                const userData = await checkUserResponse.json();
+                log(`📊 Estado del usuario recién creado:`);
+                log(`   - Email: ${userData.email}`);
+                log(`   - Email Verificado: ${userData.emailVerified}`);
+                log(`   - Token de Verificación: ${userData.emailVerificationToken ? 'PRESENTE' : 'NULL'}`);
+
+                if (userData.emailVerificationToken && !userData.emailVerified) {
+                    log('✅ CORRECTO: Token generado al enviar email, usuario no verificado', 'success');
+                } else if (!userData.emailVerificationToken && !userData.emailVerified) {
+                    log('❌ PROBLEMA: No hay token pero tampoco se envió email', 'error');
+                } else {
+                    log('⚠️ ESTADO INESPERADO del usuario', 'warning');
+                }
+
+                // Intentar crear asset (debería fallar)
+                log('3️⃣ Intentando crear asset sin email verificado...');
+                const assetResponse = await fetch(`${API_URL}/assets`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${userToken}`
+                    },
+                    body: JSON.stringify({
+                        name: 'Test Asset',
+                        symbol: 'TEST',
+                        type: 'STOCK'
+                    })
+                });
+
+                const assetData = await assetResponse.json();
+                if (assetResponse.status === 403) {
+                    log('✅ CORRECTO: Asset creation blocked - email not verified', 'success');
+                    log(`   Mensaje: ${assetData.message}`);
+                } else {
+                    log('❌ PROBLEMA: Asset creation should be blocked', 'error');
+                    log(`   Status: ${assetResponse.status}`);
+                }
+
+                log('🏁 Test completado');
+
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+    </script>
+</body>
+</html>
