@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Administrativo - Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 1200px; margin: 0 auto; }
+        .header { background: #007bff; color: white; padding: 20px; border-radius: 5px; margin-bottom: 20px; }
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .stat-card { background: #f8f9fa; padding: 15px; border-radius: 5px; border-left: 4px solid #007bff; }
+        .users-table { width: 100%; border-collapse: collapse; background: white; border-radius: 5px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .users-table th, .users-table td { padding: 12px; text-align: left; border-bottom: 1px solid #dee2e6; }
+        .users-table th { background: #f8f9fa; font-weight: bold; }
+        .badge { padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; }
+        .badge.free { background: #e7f3ff; color: #0066cc; }
+        .badge.premium { background: #fff3e0; color: #e65100; }
+        .badge.verified { background: #e8f5e8; color: #2e7d32; }
+        .badge.unverified { background: #ffeaea; color: #c62828; }
+        .btn { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; margin: 2px; }
+        .btn.upgrade { background: #28a745; color: white; }
+        .btn.downgrade { background: #ffc107; color: black; }
+        .btn.verify { background: #17a2b8; color: white; }
+        .btn.toggle { background: #6c757d; color: white; }
+        .btn.delete { background: #dc3545; color: white; }
+        .btn.make-admin { background: #6f42c1; color: white; }
+        .error { background: #f8d7da; color: #721c24; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        .success { background: #d4edda; color: #155724; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        .login-form { background: #f8f9fa; padding: 20px; border-radius: 5px; margin-bottom: 20px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .form-group input { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        .login-btn { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔧 Panel Administrativo</h1>
+        <p>Panel de control para gestionar usuarios y suscripciones</p>
+    </div>
+
+    <div id="login-section">
+        <div class="login-form">
+            <h3>Iniciar Sesión como Administrador</h3>
+            <div class="form-group">
+                <label>Email:</label>
+                <input type="email" id="admin-email" value="admin@tudominio.com" placeholder="Email del administrador">
+            </div>
+            <div class="form-group">
+                <label>Contraseña:</label>
+                <input type="password" id="admin-password" value="admin123456789" placeholder="Contraseña">
+            </div>
+            <button class="login-btn" onclick="loginAdmin()">Iniciar Sesión</button>
+        </div>
+    </div>
+
+    <div id="admin-panel" style="display: none;">
+        <div id="stats-section">
+            <h2>📊 Estadísticas del Sistema</h2>
+            <div class="stats" id="stats-grid">
+                <!-- Las estadísticas se cargarán aquí -->
+            </div>
+        </div>
+
+        <div id="users-section">
+            <h2>👥 Gestión de Usuarios</h2>
+            <button onclick="loadUsers()" style="margin-bottom: 15px; background: #28a745; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;">🔄 Actualizar Lista</button>
+            <div id="users-container">
+                <!-- La tabla de usuarios se cargará aquí -->
+            </div>
+        </div>
+    </div>
+
+    <div id="messages"></div>
+
+    <script>
+        const API_URL = 'http://localhost:3000/api';
+        let adminToken = null;
+
+        function showMessage(message, type = 'success') {
+            const messagesDiv = document.getElementById('messages');
+            const div = document.createElement('div');
+            div.className = type;
+            div.innerHTML = message;
+            messagesDiv.appendChild(div);
+            setTimeout(() => div.remove(), 5000);
+        }
+
+        async function loginAdmin() {
+            const email = document.getElementById('admin-email').value;
+            const password = document.getElementById('admin-password').value;
+
+            try {
+                const response = await fetch(`${API_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok && data.token) {
+                    adminToken = data.token;
+                    
+                    // Verificar que es admin
+                    const checkResponse = await fetch(`${API_URL}/auth/check-status`, {
+                        headers: { 'Authorization': `Bearer ${adminToken}` }
+                    });
+                    
+                    const userData = await checkResponse.json();
+                    
+                    if (userData.roles?.includes('admin')) {
+                        document.getElementById('login-section').style.display = 'none';
+                        document.getElementById('admin-panel').style.display = 'block';
+                        showMessage('✅ Sesión iniciada como administrador');
+                        loadStats();
+                        loadUsers();
+                    } else {
+                        showMessage('❌ Este usuario no tiene permisos de administrador', 'error');
+                    }
+                } else {
+                    showMessage('❌ Credenciales incorrectas', 'error');
+                }
+            } catch (error) {
+                showMessage('❌ Error al iniciar sesión: ' + error.message, 'error');
+            }
+        }
+
+        async function loadStats() {
+            try {
+                const response = await fetch(`${API_URL}/admin/stats`, {
+                    headers: { 'Authorization': `Bearer ${adminToken}` }
+                });
+                
+                const stats = await response.json();
+                
+                document.getElementById('stats-grid').innerHTML = `
+                    <div class="stat-card">
+                        <h3>👥 Total Usuarios</h3>
+                        <h2>${stats.totalUsers}</h2>
+                    </div>
+                    <div class="stat-card">
+                        <h3>✅ Emails Verificados</h3>
+                        <h2>${stats.verifiedUsers}</h2>
+                    </div>
+                    <div class="stat-card">
+                        <h3>🆓 Usuarios FREE</h3>
+                        <h2>${stats.freeUsers}</h2>
+                    </div>
+                    <div class="stat-card">
+                        <h3>⭐ Usuarios PREMIUM</h3>
+                        <h2>${stats.premiumUsers}</h2>
+                    </div>
+                    <div class="stat-card">
+                        <h3>💼 Total Assets</h3>
+                        <h2>${stats.totalAssets}</h2>
+                    </div>
+                    <div class="stat-card">
+                        <h3>🔄 Suscripciones Activas</h3>
+                        <h2>${stats.activeSubscriptions}</h2>
+                    </div>
+                `;
+            } catch (error) {
+                showMessage('❌ Error cargando estadísticas: ' + error.message, 'error');
+            }
+        }
+
+        async function loadUsers() {
+            try {
+                const response = await fetch(`${API_URL}/admin/users`, {
+                    headers: { 'Authorization': `Bearer ${adminToken}` }
+                });
+                
+                const users = await response.json();
+                
+                const tableHTML = `
+                    <table class="users-table">
+                        <thead>
+                            <tr>
+                                <th>Usuario</th>
+                                <th>Email</th>
+                                <th>Roles</th>
+                                <th>Verificado</th>
+                                <th>Plan</th>
+                                <th>Assets</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${users.map(user => `
+                                <tr>
+                                    <td>${user.name}</td>
+                                    <td>${user.email}</td>
+                                    <td>
+                                        <span class="badge ${user.roles?.includes('admin') ? 'premium' : 'free'}">
+                                            ${user.roles?.join(', ') || 'user'}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge ${user.emailVerified ? 'verified' : 'unverified'}">
+                                            ${user.emailVerified ? '✅ Sí' : '❌ No'}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge ${user.currentSubscription.plan.toLowerCase()}">
+                                            ${user.currentSubscription.plan}
+                                        </span>
+                                    </td>
+                                    <td>${user.portfolioStats.totalAssets}/${user.currentSubscription.assetLimit}</td>
+                                    <td>${user.isActive ? '🟢 Activo' : '🔴 Inactivo'}</td>
+                                    <td>
+                                        ${user.currentSubscription.plan === 'FREE' ? 
+                                            `<button class="btn upgrade" onclick="updateSubscription('${user.id}', 'PREMIUM')">⭐ Premium</button>` :
+                                            `<button class="btn downgrade" onclick="updateSubscription('${user.id}', 'FREE')">🆓 Free</button>`
+                                        }
+                                        ${!user.emailVerified ? 
+                                            `<button class="btn verify" onclick="verifyEmail('${user.id}')">✅ Verificar</button>` : ''
+                                        }
+                                        ${!user.roles?.includes('admin') ? 
+                                            `<button class="btn make-admin" onclick="makeAdmin('${user.id}')">👑 Admin</button>` : ''
+                                        }
+                                        <button class="btn toggle" onclick="toggleStatus('${user.id}')">${user.isActive ? '🚫 Desactivar' : '✅ Activar'}</button>
+                                        ${!user.roles?.includes('admin') ? 
+                                            `<button class="btn delete" onclick="deleteUser('${user.id}', '${user.email}')">🗑️ Eliminar</button>` : ''
+                                        }
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+                
+                document.getElementById('users-container').innerHTML = tableHTML;
+            } catch (error) {
+                showMessage('❌ Error cargando usuarios: ' + error.message, 'error');
+            }
+        }
+
+        async function updateSubscription(userId, newPlan) {
+            try {
+                const response = await fetch(`${API_URL}/admin/users/${userId}/subscription`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${adminToken}`
+                    },
+                    body: JSON.stringify({ plan: newPlan })
+                });
+                
+                const result = await response.json();
+                showMessage(`✅ ${result.message}`);
+                loadUsers(); // Recargar la lista
+                loadStats(); // Actualizar estadísticas
+            } catch (error) {
+                showMessage('❌ Error actualizando suscripción: ' + error.message, 'error');
+            }
+        }
+
+        async function verifyEmail(userId) {
+            try {
+                const response = await fetch(`${API_URL}/admin/users/${userId}/verify-email`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${adminToken}` }
+                });
+                
+                const result = await response.json();
+                showMessage(`✅ ${result.message}`);
+                loadUsers(); // Recargar la lista
+                loadStats(); // Actualizar estadísticas
+            } catch (error) {
+                showMessage('❌ Error verificando email: ' + error.message, 'error');
+            }
+        }
+
+        async function toggleStatus(userId) {
+            try {
+                const response = await fetch(`${API_URL}/admin/users/${userId}/toggle-status`, {
+                    method: 'PATCH',
+                    headers: { 'Authorization': `Bearer ${adminToken}` }
+                });
+                
+                const result = await response.json();
+                showMessage(`✅ ${result.message}`);
+                loadUsers(); // Recargar la lista
+            } catch (error) {
+                showMessage('❌ Error cambiando estado: ' + error.message, 'error');
+            }
+        }
+
+        async function deleteUser(userId, userEmail) {
+            if (!confirm(`⚠️ ¿Estás seguro de eliminar al usuario "${userEmail}"?\n\nEsta acción eliminará:\n- El usuario\n- Su suscripción\n- Su portfolio\n- Todos sus datos\n\nEsta acción NO se puede deshacer.`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/admin/users/${userId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${adminToken}` }
+                });
+                
+                const result = await response.json();
+                showMessage(`✅ ${result.message}`);
+                loadUsers(); // Recargar la lista
+                loadStats(); // Actualizar estadísticas
+            } catch (error) {
+                showMessage('❌ Error eliminando usuario: ' + error.message, 'error');
+            }
+        }
+
+        async function makeAdmin(userId) {
+            if (!confirm('⚠️ ¿Seguro que quieres hacer a este usuario ADMINISTRADOR?\n\nEsto le dará acceso completo al panel admin.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/admin/users/${userId}/roles`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${adminToken}`
+                    },
+                    body: JSON.stringify({ roles: ['admin', 'user'] })
+                });
+                
+                const result = await response.json();
+                showMessage(`✅ ${result.message}`);
+                loadUsers(); // Recargar la lista
+            } catch (error) {
+                showMessage('❌ Error actualizando roles: ' + error.message, 'error');
+            }
+        }
+    </script>
+</body>
+</html>
