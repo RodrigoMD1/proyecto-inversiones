@@ -19,7 +19,10 @@ export class AdminGuard implements CanActivate {
       throw new ForbiddenException('No user found in request');
     }
 
-    if (!user.roles.includes('admin')) {
+    // Verificar si el usuario tiene rol admin
+    const hasAdminRole = user.roles && user.roles.includes('admin');
+    
+    if (!hasAdminRole) {
       throw new ForbiddenException('Access denied. Administrator privileges required.');
     }
 

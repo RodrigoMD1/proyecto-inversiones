@@ -59,16 +59,16 @@ export class AuthService {
         // En producción, podrías limpiar el token si el email falla
       }
 
+      const jwtPayload: JwtPayload = {
+        userId: user.id,
+        email: user.email,
+        role: user.roles[0] || 'user',
+        name: user.name
+      };
+
       return {
         ...user,
-        token: this.getJwtToken({ 
-          id: user.id,
-          userId: user.id,
-          email: user.email,
-          role: user.roles[0] || 'user', // Primer rol del array
-          roles: user.roles,
-          name: user.name
-        })
+        token: this.getJwtToken(jwtPayload)
       }
     } catch (error) {
       this.handleDBErrors(error);
@@ -101,16 +101,17 @@ export class AuthService {
     // Eliminar password antes de devolver
     delete user.password;
 
+    // Crear payload exactamente como lo espera el frontend
+    const jwtPayload: JwtPayload = {
+      userId: user.id,
+      email: user.email,
+      role: user.roles[0] || 'user', // Primer rol del array
+      name: user.name
+    };
+
     return {
       ...user,
-      token: this.getJwtToken({ 
-        id: user.id,
-        userId: user.id,
-        email: user.email,
-        role: user.roles[0] || 'user', // Primer rol del array
-        roles: user.roles,
-        name: user.name
-      })
+      token: this.getJwtToken(jwtPayload)
     };
   }
 
@@ -123,16 +124,16 @@ export class AuthService {
   ////////////////////////////////////////////////////////////////////
 
   async checkAuthStatus(user: User) {
+    const jwtPayload: JwtPayload = {
+      userId: user.id,
+      email: user.email,
+      role: user.roles[0] || 'user',
+      name: user.name
+    };
+
     return {
       ...user,
-      token: this.getJwtToken({ 
-        id: user.id,
-        userId: user.id,
-        email: user.email,
-        role: user.roles[0] || 'user', // Primer rol del array
-        roles: user.roles,
-        name: user.name
-      })
+      token: this.getJwtToken(jwtPayload)
     };
   }
   ////////////////////////////////////////////////////////////////////

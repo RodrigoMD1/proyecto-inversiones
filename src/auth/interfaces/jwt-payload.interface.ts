@@ -1,10 +1,10 @@
 
 
 export interface JwtPayload {
-    id: string;
-    userId: string;  // Alias para compatibilidad
+    userId: string;  // Campo principal que usa tu frontend
     email: string;
-    role: string;    // Primer rol o rol principal
-    roles: string[]; // Array completo de roles
+    role: string;    // Rol principal (no array)
     name: string;
+    id?: string;     // Alias para compatibilidad
+    roles?: string[]; // Array completo como opcional
 }
