@@ -53,6 +53,32 @@ export class WebhooksController {
         return { received: true };
       }
 
+      // Notificaciones de suscripción (preapproval)
+      if (body.type === 'preapproval') {
+        const preapprovalId = body.data.id;
+        const action = body.action; // ej: 'authorized', 'paused', 'cancelled'
+
+        // Buscar suscripción por mercadopago_subscription_id
+        const subscription = await this.subscriptionsService.findByMercadoPagoPreapprovalId(preapprovalId);
+
+        if (!subscription) return { received: true };
+
+        if (action === 'authorized' || body.data?.status === 'authorized') {
+          await this.subscriptionsService.activatePremium(subscription.user.id, preapprovalId);
+        }
+
+        if (action === 'paused') {
+          // marcar como cancelada y crear FREE
+          await this.subscriptionsService.cancelSubscription(subscription.user.id);
+        }
+
+        if (action === 'cancelled') {
+          await this.subscriptionsService.cancelSubscription(subscription.user.id);
+        }
+
+        return { received: true };
+      }
+
       return { received: true };
     } catch (error) {
       console.error('Error procesando webhook:', error);

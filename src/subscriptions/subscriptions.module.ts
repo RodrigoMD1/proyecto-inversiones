@@ -7,12 +7,14 @@ import { User } from '../auth/entities/user.entity';
 import { PortfolioItem } from '../portfolio/entities/portfolio.entity';
 import { PassportModule } from '@nestjs/passport';
 import { AuthModule } from '../auth/auth.module';
+import { PaymentsModule } from '../payments/payments.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Subscription, User, PortfolioItem]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
-    forwardRef(() => AuthModule),
+  forwardRef(() => AuthModule),
+  forwardRef(() => PaymentsModule),
   ],
   controllers: [SubscriptionsController],
   providers: [SubscriptionsService],

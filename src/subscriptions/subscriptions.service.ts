@@ -1,10 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Optional, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Subscription, SubscriptionStatus, SubscriptionPlan } from './entities/subscription.entity';
 import { User } from '../auth/entities/user.entity';
 import { PortfolioItem } from '../portfolio/entities/portfolio.entity';
+import { PaymentsService } from '../payments/payments.service';
 
 @Injectable()
 export class SubscriptionsService {
@@ -15,7 +16,25 @@ export class SubscriptionsService {
     private userRepository: Repository<User>,
     @InjectRepository(PortfolioItem)
     private portfolioRepository: Repository<PortfolioItem>,
+    @Optional() @Inject(forwardRef(() => PaymentsService))
+    private paymentsService?: PaymentsService,
   ) {}
+
+  async getActiveSubscription(userId: string): Promise<Subscription | null> {
+    const subscription = await this.subscriptionRepository.findOne({
+      where: { user: { id: userId }, status: SubscriptionStatus.ACTIVE },
+      relations: ['user']
+    });
+    return subscription ?? null;
+  }
+
+  async findByMercadoPagoPreapprovalId(preapprovalId: string): Promise<Subscription | null> {
+    const subscription = await this.subscriptionRepository.findOne({
+      where: { mercadopago_subscription_id: preapprovalId },
+      relations: ['user'],
+    });
+    return subscription ?? null;
+  }
 
   // Obtener suscripción activa del usuario
   async getCurrentSubscription(userId: string): Promise<Subscription> {
@@ -88,6 +107,14 @@ export class SubscriptionsService {
 
   // Cancelar suscripción
   async cancelSubscription(userId: string): Promise<void> {
+    // intentar cancelar preapproval si existe
+    try {
+      if (this.paymentsService) {
+        await this.paymentsService.cancelUserPreapproval(userId);
+      }
+    } catch (e) {
+      // continuar aunque falle
+    }
     await this.cancelCurrentSubscription(userId);
     
     // Crear nueva suscripción FREE
