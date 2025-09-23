@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
 // Test para verificar el flujo correcto de verificación de email
 const fetch = require('node-fetch');
 
