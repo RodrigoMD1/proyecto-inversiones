@@ -36,6 +36,16 @@ export class NewsService {
       name: 'Ámbito - Economía',
       country: 'AR'
     },
+    { 
+      url: 'https://www.iprofesional.com/rss/finanzas.xml', 
+      name: 'iProfesional Finanzas',
+      country: 'AR'
+    },
+    { 
+      url: 'https://www.baenegocios.com/rss/finanzas', 
+      name: 'BAE Negocios',
+      country: 'AR'
+    },
 
     // ========== USA ==========
     { 
@@ -68,6 +78,21 @@ export class NewsService {
       name: 'MarketWatch',
       country: 'US'
     },
+    { 
+      url: 'https://finance.yahoo.com/news/rssindex', 
+      name: 'Yahoo Finance',
+      country: 'US'
+    },
+    { 
+      url: 'https://seekingalpha.com/market_currents.xml', 
+      name: 'Seeking Alpha',
+      country: 'US'
+    },
+    { 
+      url: 'https://www.investopedia.com/feedbuilder/feed/getfeed?feedName=rss_headline', 
+      name: 'Investopedia',
+      country: 'US'
+    },
   ];
 
   async getNews(country?: 'AR' | 'US') {
@@ -78,7 +103,7 @@ export class NewsService {
       if (country) {
         const filtered = this.cache.articles.filter(a => a.country === country);
         return {
-          articles: filtered.slice(0, 20),
+          articles: filtered.slice(0, 200),
           total: filtered.length,
           byCountry: {
             argentina: this.cache.articles.filter(a => a.country === 'AR').length,
@@ -88,7 +113,7 @@ export class NewsService {
       }
       
       return {
-        articles: this.cache.articles.slice(0, 20),
+        articles: this.cache.articles.slice(0, 200),
         total: this.cache.articles.length,
         byCountry: {
           argentina: this.cache.articles.filter(a => a.country === 'AR').length,
@@ -110,7 +135,8 @@ export class NewsService {
       try {
         const parsed = await this.parser.parseURL(feed.url);
         
-        parsed.items.forEach(item => {
+        // Limitar a 50 artículos por feed
+        parsed.items.slice(0, 50).forEach(item => {
           allArticles.push({
             title: item.title,
             description: item.contentSnippet || item.content || item.summary || item.description || '',
@@ -141,7 +167,7 @@ export class NewsService {
     };
 
     return {
-      articles: allArticles.slice(0, 20),
+      articles: allArticles.slice(0, 200),
       total: allArticles.length,
       byCountry: {
         argentina: allArticles.filter(a => a.country === 'AR').length,

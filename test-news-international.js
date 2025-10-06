@@ -6,19 +6,24 @@ async function testFeeds() {
   console.log('🧪 Probando feeds RSS internacionales (Argentina + USA)...\n');
   
   const feeds = [
-    // Argentina
+    // ========== ARGENTINA ==========
     { url: 'https://www.ambito.com/rss/finanzas.xml', name: 'Ámbito Financiero', country: 'AR' },
     { url: 'https://www.cronista.com/rss/finanzas/', name: 'El Cronista', country: 'AR' },
     { url: 'https://www.cronista.com/rss/economia/', name: 'El Cronista - Economía', country: 'AR' },
     { url: 'https://www.ambito.com/rss/economia.xml', name: 'Ámbito - Economía', country: 'AR' },
+    { url: 'https://www.iprofesional.com/rss/finanzas.xml', name: 'iProfesional Finanzas', country: 'AR' },
+    { url: 'https://www.baenegocios.com/rss/finanzas', name: 'BAE Negocios', country: 'AR' },
     
-    // USA
+    // ========== USA ==========
     { url: 'https://feeds.bloomberg.com/markets/news.rss', name: 'Bloomberg Markets', country: 'US' },
     { url: 'https://www.cnbc.com/id/100003114/device/rss/rss.html', name: 'CNBC Finance', country: 'US' },
     { url: 'http://feeds.reuters.com/reuters/businessNews', name: 'Reuters Business', country: 'US' },
     { url: 'https://rss.cnn.com/rss/money_latest.rss', name: 'CNN Money', country: 'US' },
     { url: 'https://moxie.foxnews.com/google-publisher/markets.xml', name: 'Fox Business', country: 'US' },
     { url: 'https://www.marketwatch.com/rss/marketpulse', name: 'MarketWatch', country: 'US' },
+    { url: 'https://finance.yahoo.com/news/rssindex', name: 'Yahoo Finance', country: 'US' },
+    { url: 'https://seekingalpha.com/market_currents.xml', name: 'Seeking Alpha', country: 'US' },
+    { url: 'https://www.investopedia.com/feedbuilder/feed/getfeed?feedName=rss_headline', name: 'Investopedia', country: 'US' },
   ];
 
   const allArticles = [];
@@ -30,7 +35,8 @@ async function testFeeds() {
       const parsed = await parser.parseURL(feed.url);
       
       let count = 0;
-      parsed.items.forEach(item => {
+      // Limitar a 50 artículos por feed (como en el servicio real)
+      parsed.items.slice(0, 50).forEach(item => {
         if (count < 2) {
           console.log(`  ✅ ${item.title.substring(0, 60)}...`);
           count++;
