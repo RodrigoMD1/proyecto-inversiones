@@ -22,7 +22,8 @@
     "test:mp:plan": "node test-preapproval-plan.js",
     "test:mp:authorize": "node test-preapproval-authorize.js",
     "e2e:render": "node scripts/e2e-render.js",
-    "test:news": "node test-news-rss.js"
+    "test:news": "node test-news-rss.js",
+    "test:news:international": "node test-news-international.js"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",
