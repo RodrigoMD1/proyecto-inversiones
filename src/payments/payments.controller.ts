@@ -77,6 +77,22 @@ export class PaymentsController {
     return res;
   }
 
+  // endpoint público para que el front obtenga el id del plan (sin JWT)
+  @Get('preapproval-plan/public')
+  @UseGuards()
+  @ApiResponse({ status: 200, description: 'Devuelve el preapproval_plan_id para uso público del front' })
+  async getPublicPlanId() {
+    const res = await this.paymentsService.getOrCreateDefaultPreapprovalPlan();
+    return { id: res?.id || null };
+  }
+
+  // endpoint para forzar/override del plan id (requiere JWT)
+  @Post('preapproval-plan/override')
+  @ApiResponse({ status: 200, description: 'Fija el MP_PREAPPROVAL_PLAN_ID en runtime' })
+  async overridePlanId(@Body() body: { id: string }) {
+    return this.paymentsService.setPreapprovalPlanId(body?.id);
+  }
+
   @Get('history')
   @ApiResponse({ status: 200, description: 'Historial de pagos del usuario' })
   async getPaymentHistory(@GetUser() user: User) {

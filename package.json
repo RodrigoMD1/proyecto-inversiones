@@ -20,7 +20,9 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "typeorm": "typeorm-ts-node-commonjs",
     "test:mp:plan": "node test-preapproval-plan.js",
-    "test:mp:authorize": "node test-preapproval-authorize.js"
+    "test:mp:authorize": "node test-preapproval-authorize.js",
+    "e2e:render": "node scripts/e2e-render.js",
+    "test:news": "node test-news-rss.js"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",
@@ -50,6 +52,7 @@
     "pg": "^8.14.1",
     "puppeteer": "^24.6.1",
     "reflect-metadata": "^0.2.0",
+    "rss-parser": "^3.13.0",
     "rxjs": "^7.8.1",
     "typeorm": "^0.3.22",
     "uuid": "^11.1.0"

@@ -162,6 +162,15 @@ export class PaymentsService {
     }
   }
 
+  // Establecer/forzar el preapproval_plan_id en runtime (útil para prod)
+  setPreapprovalPlanId(id: string) {
+    if (!id || typeof id !== 'string') {
+      throw new BadRequestException('plan id inválido');
+    }
+    (process.env as any).MP_PREAPPROVAL_PLAN_ID = id;
+    return { id };
+  }
+
   // Crear suscripción authorized con plan asociado y card_token_id
   async createPreapprovalAuthorized(
     userId: string,
