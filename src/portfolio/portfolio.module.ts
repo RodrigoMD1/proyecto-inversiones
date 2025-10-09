@@ -11,6 +11,8 @@ import { ReportController } from './report.controller'; // <-- importa el nuevo 
 import { AssetLimitGuard } from '../guards/asset-limit.guard';
 import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
 import { EmailModule } from '../email/email.module';
+import { ReportAnalysisService } from './report-analysis.service';
+import { PdfGeneratorService } from './pdf-generator.service';
 
 @Module({
   imports: [
@@ -21,7 +23,13 @@ import { EmailModule } from '../email/email.module';
     forwardRef(() => SubscriptionsModule)
   ],
   controllers: [PortfolioController, ReportController],
-  providers: [PortfolioService, ReportService, AssetLimitGuard],
+  providers: [
+    PortfolioService, 
+    ReportService, 
+    ReportAnalysisService,
+    PdfGeneratorService,
+    AssetLimitGuard
+  ],
   exports: [ReportService], // <-- agrega esta línea
 })
 export class PortfolioModule {}
