@@ -574,4 +574,344 @@ Si tienes problemas:
 3. Revisa los logs del servidor para errores específicos
 4. Consulta la documentación de pdfkit y chart.js
 
+---
+
+## 🔧 TROUBLESHOOTING - PROBLEMAS COMUNES
+
+### 🐛 PROBLEMA 1: Emojis aparecen como símbolos raros
+
+**Síntomas:**
+- `Ø>ÝG` en lugar de 🥇
+- `& þ` en lugar de ⚠️
+- `Ø=Ü°` en lugar de 💰
+- `Ø=ÜÉ` en lugar de 📉
+
+**Causa:** PDFKit no maneja bien UTF-8/emojis por defecto.
+
+**Solución Rápida (5 min):**
+
+Crear función helper en `pdf-generator.service.ts`:
+
+```typescript
+private sanitizeText(text: string): string {
+  return text
+    // Medallas
+    .replace(/🥇/g, '★1.')
+    .replace(/🥈/g, '★2.')
+    .replace(/🥉/g, '★3.')
+    .replace(/4️⃣/g, '★4.')
+    .replace(/5️⃣/g, '★5.')
+    
+    // Indicadores
+    .replace(/📊/g, '[DIV]')
+    .replace(/⚠️/g, '[!]')
+    .replace(/🎯/g, '[*]')
+    .replace(/💰/g, '[$]')
+    .replace(/📉/g, '[v]')
+    .replace(/📈/g, '[^]')
+    .replace(/✅/g, '[OK]')
+    .replace(/❌/g, '[X]')
+    .replace(/💡/g, '[i]')
+    .replace(/🔴/g, '[ALTA]')
+    .replace(/🟡/g, '[MEDIA]')
+    .replace(/🟢/g, '[BAJA]')
+    
+    // Limpiar cualquier otro emoji
+    .replace(/[\u{1F600}-\u{1F64F}]/gu, '')
+    .replace(/[\u{1F300}-\u{1F5FF}]/gu, '')
+    .replace(/[\u{1F680}-\u{1F6FF}]/gu, '')
+    .replace(/[\u{2600}-\u{26FF}]/gu, '')
+    .replace(/[\u{2700}-\u{27BF}]/gu, '');
+}
+```
+
+**Aplicar en todos los textos:**
+
+```typescript
+// Antes:
+doc.text('🥇 Top Performer');
+
+// Después:
+doc.text(this.sanitizeText('🥇 Top Performer')); // → "★1. Top Performer"
+```
+
+**Buscar y reemplazar en todo el archivo:**
+
+```
+Buscar: doc.text('
+Reemplazar: doc.text(this.sanitizeText('
+
+Buscar: doc.text(`
+Reemplazar: doc.text(this.sanitizeText(`
+```
+
+**Solución Definitiva (1 hora):**
+
+Migrar a Puppeteer para soporte completo de emojis:
+
+```bash
+npm install puppeteer
+```
+
+```typescript
+import * as puppeteer from 'puppeteer';
+
+async generatePdf(reportData: CompleteReportData): Promise<Buffer> {
+  const browser = await puppeteer.launch({
+    headless: true,
+    args: ['--no-sandbox']
+  });
+  
+  const page = await browser.newPage();
+  
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="UTF-8">
+        <style>
+          body { font-family: Arial; padding: 40px; }
+          .emoji { font-size: 20px; }
+        </style>
+      </head>
+      <body>
+        <h1>📊 RESUMEN EJECUTIVO</h1>
+        <p>🥇 Top Performer: ${reportData.topPerformers[0].ticker}</p>
+      </body>
+    </html>
+  `;
+  
+  await page.setContent(html, { waitUntil: 'networkidle0' });
+  const pdf = await page.pdf({ format: 'A4' });
+  await browser.close();
+  
+  return pdf;
+}
+```
+
+---
+
+### 🐛 PROBLEMA 2: Texto/Números Superpuestos
+
+**Síntomas:**
+```
+$1.267.981,36
+$13.116.682,78  ← Se superpone con el de arriba
+```
+
+**Causa:** PDFKit no actualiza la posición Y automáticamente.
+
+**Solución:**
+
+Siempre especificar X e Y explícitamente y usar variable para trackear posición:
+
+```typescript
+// ❌ MAL - Se superpone
+doc.text('Línea 1', 100, 100);
+doc.text('Línea 2'); // Sin Y especificado
+
+// ✅ BIEN - Control manual de Y
+let y = 100;
+const lineHeight = 20;
+
+doc.text('Línea 1', 100, y);
+y += lineHeight; // Incrementar Y
+
+doc.text('Línea 2', 100, y);
+y += lineHeight;
+
+doc.text('Línea 3', 100, y);
+y += lineHeight;
+```
+
+**Ejemplo completo para tablas:**
+
+```typescript
+private generateTable(doc: typeof PDFDocument, data: any[]): number {
+  let y = 200;
+  const lineHeight = 20;
+  const cols = { col1: 50, col2: 200, col3: 350 };
+  
+  // Header
+  doc.fontSize(10).font('Helvetica-Bold');
+  doc.text('Columna 1', cols.col1, y);
+  doc.text('Columna 2', cols.col2, y);
+  doc.text('Columna 3', cols.col3, y);
+  y += lineHeight;
+  
+  // Línea separadora
+  doc.moveTo(40, y).lineTo(580, y).stroke();
+  y += 5;
+  
+  // Datos
+  doc.font('Helvetica').fontSize(9);
+  data.forEach((row, index) => {
+    // Nueva página si es necesario
+    if (y > 750) {
+      doc.addPage();
+      y = 50;
+    }
+    
+    // Fondo alternado
+    if (index % 2 === 0) {
+      doc.rect(40, y - 2, 560, lineHeight).fill('#f5f5f5');
+      doc.fillColor('#000000');
+    }
+    
+    // Texto con X e Y explícitos
+    doc.text(row.value1, cols.col1, y);
+    doc.text(row.value2, cols.col2, y);
+    doc.text(row.value3, cols.col3, y);
+    
+    y += lineHeight; // CRÍTICO: Incrementar Y
+  });
+  
+  return y; // Retornar posición final
+}
+```
+
+**Checklist anti-superposición:**
+
+- [ ] ✅ Siempre especificar `doc.text(texto, x, y)` con X e Y
+- [ ] ✅ Usar variable `y` para trackear posición
+- [ ] ✅ Incrementar `y` después de cada línea
+- [ ] ✅ Verificar `if (y > 750)` para nueva página
+- [ ] ✅ Retornar `y` al final de cada función
+- [ ] ✅ No usar `doc.moveDown()` (poco confiable)
+
+---
+
+### 🐛 PROBLEMA 3: PDF vacío o muy pequeño
+
+**Causa:** No hay datos en el portfolio.
+
+**Solución:**
+
+Verificar que el usuario tenga activos antes de generar:
+
+```typescript
+const portfolioItems = await this.portfolioItemRepository.find({
+  where: { user: { id: userId } }
+});
+
+if (portfolioItems.length === 0) {
+  throw new BadRequestException(
+    'No se puede generar el informe. El portfolio está vacío. ' +
+    'Agrega activos antes de generar un informe.'
+  );
+}
+```
+
+---
+
+### 🐛 PROBLEMA 4: Error "Cannot read property 'currentPrice'"
+
+**Causa:** Activos sin precio actual.
+
+**Solución:**
+
+Usar fallback en los cálculos:
+
+```typescript
+const currentPrice = item.asset?.currentPrice || item.purchase_price;
+const investedValue = item.purchase_price * item.quantity;
+const currentValue = currentPrice * item.quantity;
+```
+
+---
+
+### 🐛 PROBLEMA 5: Timeout al generar PDF
+
+**Síntomas:** Error después de 30 segundos.
+
+**Solución:**
+
+Aumentar timeout en el frontend:
+
+```typescript
+const response = await axios.post(
+  '/api/portfolio/report/generate',
+  {},
+  {
+    headers: { Authorization: `Bearer ${token}` },
+    responseType: 'blob',
+    timeout: 60000 // 60 segundos en lugar de 30
+  }
+);
+```
+
+---
+
+### 🧪 DEBUG: Agregar Grid de Posiciones
+
+Para debuggear problemas de posicionamiento, agregar grid temporal:
+
+```typescript
+private addDebugGrid(doc: typeof PDFDocument) {
+  doc.save();
+  doc.strokeColor('#cccccc').lineWidth(0.5);
+  
+  // Líneas horizontales cada 50px
+  for (let y = 0; y <= 800; y += 50) {
+    doc.moveTo(0, y).lineTo(600, y).stroke();
+    doc.fontSize(8).fillColor('#999999').text(y.toString(), 5, y);
+  }
+  
+  // Líneas verticales cada 50px
+  for (let x = 0; x <= 600; x += 50) {
+    doc.moveTo(x, 0).lineTo(x, 800).stroke();
+    doc.text(x.toString(), x, 5);
+  }
+  
+  doc.restore();
+}
+
+// Usar al inicio (SOLO PARA DEBUG)
+// this.addDebugGrid(doc);
+```
+
+---
+
+### 📝 LOGS ÚTILES PARA DEBUG
+
+Agregar en el backend:
+
+```typescript
+console.log('📊 Generando reporte para usuario:', userId);
+console.log('📈 Activos encontrados:', portfolioItems.length);
+console.log('💰 Valor total calculado:', summary.totalValue);
+console.log('📄 Iniciando generación de PDF...');
+console.log('✅ PDF generado. Tamaño:', pdfBuffer.length, 'bytes');
+```
+
+---
+
+### 🚀 MIGRACIÓN RECOMENDADA: PDFKit → Puppeteer
+
+Si los problemas persisten, considera migrar a Puppeteer:
+
+**Ventajas:**
+- ✅ Emojis funcionan perfectamente (UTF-8 nativo)
+- ✅ Sin problemas de superposición (layout automático)
+- ✅ CSS completo (Grid, Flexbox, etc.)
+- ✅ HTML estándar (más fácil de mantener)
+- ✅ Charts.js integrado nativamente
+
+**Desventajas:**
+- ❌ Más pesado (~200MB de dependencias)
+- ❌ Requiere Chromium instalado
+- ❌ Ligeramente más lento (500ms vs 100ms)
+
+**Instalación:**
+
+```bash
+npm install puppeteer
+```
+
+**Código base:**
+
+Ver ejemplo completo en la sección "Solución Definitiva" arriba.
+
+---
+
 **¡El sistema está listo para usar!** 🎉

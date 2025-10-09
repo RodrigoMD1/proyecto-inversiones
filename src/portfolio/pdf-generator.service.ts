@@ -15,6 +15,43 @@ export class PdfGeneratorService {
     });
   }
 
+  // Helper para sanitizar texto y evitar problemas con emojis/caracteres especiales
+  private sanitizeText(text: string): string {
+    if (!text) return '';
+    
+    return text
+      // Medallas
+      .replace(/🥇/g, '*1.')
+      .replace(/🥈/g, '*2.')
+      .replace(/🥉/g, '*3.')
+      .replace(/4️⃣/g, '*4.')
+      .replace(/5️⃣/g, '*5.')
+      
+      // Indicadores
+      .replace(/📊/g, '[DIV]')
+      .replace(/⚠️/g, '[!]')
+      .replace(/🎯/g, '[*]')
+      .replace(/💰/g, '[$]')
+      .replace(/📉/g, '[v]')
+      .replace(/📈/g, '[^]')
+      .replace(/✅/g, '[OK]')
+      .replace(/❌/g, '[X]')
+      .replace(/💡/g, '[i]')
+      .replace(/🔴/g, '[ALTA]')
+      .replace(/🟡/g, '[MEDIA]')
+      .replace(/🟢/g, '[BAJA]')
+      .replace(/🚨/g, '[!!]')
+      .replace(/🔥/g, '>>>')
+      .replace(/⭐/g, '*')
+      
+      // Limpiar cualquier otro emoji que pueda causar problemas
+      .replace(/[\u{1F600}-\u{1F64F}]/gu, '') // Emoticonos
+      .replace(/[\u{1F300}-\u{1F5FF}]/gu, '') // Símbolos y pictogramas
+      .replace(/[\u{1F680}-\u{1F6FF}]/gu, '') // Transporte
+      .replace(/[\u{2600}-\u{26FF}]/gu, '')   // Símbolos misceláneos
+      .replace(/[\u{2700}-\u{27BF}]/gu, '');  // Dingbats
+  }
+
   async generatePdf(reportData: CompleteReportData): Promise<Buffer> {
     return new Promise(async (resolve, reject) => {
       try {
@@ -81,7 +118,7 @@ export class PdfGeneratorService {
     
     // Título
     doc.fontSize(28).fillColor('#ffffff')
-      .text('📊 INFORME FINANCIERO', 50, 30, { align: 'center' });
+      .text(this.sanitizeText('📊 INFORME FINANCIERO'), 50, 30, { align: 'center' });
     
     doc.fontSize(16).fillColor('#ffffff')
       .text('FINANCEPR v' + version, 50, 70, { align: 'center' });
@@ -120,11 +157,11 @@ export class PdfGeneratorService {
     doc.font('Helvetica-Bold').text('Valor Total:', leftCol, yStart);
     doc.font('Helvetica').text(`$${this.formatNumber(summary.totalValue)}`, leftCol + 120, yStart);
 
-    doc.font('Helvetica-Bold').text('Inversión Total:', leftCol, yStart + 25);
+    doc.font('Helvetica-Bold').text('Inversion Total:', leftCol, yStart + 25);
     doc.font('Helvetica').text(`$${this.formatNumber(summary.totalInvested)}`, leftCol + 120, yStart + 25);
 
     const gainLossColor = summary.totalGainLoss >= 0 ? '#10b981' : '#ef4444';
-    doc.font('Helvetica-Bold').text('Ganancia/Pérdida:', leftCol, yStart + 50);
+    doc.font('Helvetica-Bold').text('Ganancia/Perdida:', leftCol, yStart + 50);
     doc.font('Helvetica').fillColor(gainLossColor)
       .text(
         `${summary.totalGainLoss >= 0 ? '+' : ''}$${this.formatNumber(summary.totalGainLoss)} (${summary.totalGainLossPercentage.toFixed(2)}%)`,
@@ -139,26 +176,26 @@ export class PdfGeneratorService {
     doc.font('Helvetica-Bold').text('Estado:', leftCol, yStart + 100);
     const statusColor = summary.status === 'Positivo' ? '#10b981' : '#ef4444';
     doc.font('Helvetica').fillColor(statusColor)
-      .text(`✅ ${summary.status.toUpperCase()}`, leftCol + 120, yStart + 100);
+      .text(this.sanitizeText(`✅ ${summary.status.toUpperCase()}`), leftCol + 120, yStart + 100);
 
     // Columna derecha
     doc.fillColor('#000000');
     doc.font('Helvetica-Bold').text('INDICADORES CLAVE:', rightCol, yStart);
 
-    doc.font('Helvetica-Bold').text('📊 Diversificación:', rightCol, yStart + 30);
+    doc.font('Helvetica-Bold').text(this.sanitizeText('📊 Diversificacion:'), rightCol, yStart + 30);
     doc.font('Helvetica').text(`${summary.diversificationScore}/100`, rightCol + 120, yStart + 30);
 
-    doc.font('Helvetica-Bold').text('⚠️ Nivel de Riesgo:', rightCol, yStart + 55);
+    doc.font('Helvetica-Bold').text(this.sanitizeText('⚠️ Nivel de Riesgo:'), rightCol, yStart + 55);
     doc.font('Helvetica').text(summary.riskLevel, rightCol + 120, yStart + 55);
 
-    doc.font('Helvetica-Bold').text('🎯 Concentración:', rightCol, yStart + 80);
+    doc.font('Helvetica-Bold').text(this.sanitizeText('🎯 Concentracion:'), rightCol, yStart + 80);
     doc.font('Helvetica').text(`${summary.maxConcentration.toFixed(1)}%`, rightCol + 120, yStart + 80);
 
-    doc.font('Helvetica-Bold').text('💰 Mejor Activo:', rightCol, yStart + 105);
+    doc.font('Helvetica-Bold').text(this.sanitizeText('💰 Mejor Activo:'), rightCol, yStart + 105);
     doc.font('Helvetica').fillColor('#10b981').text(summary.bestAsset, rightCol + 120, yStart + 105);
 
     doc.fillColor('#000000');
-    doc.font('Helvetica-Bold').text('📉 Peor Activo:', rightCol, yStart + 130);
+    doc.font('Helvetica-Bold').text(this.sanitizeText('📉 Peor Activo:'), rightCol, yStart + 130);
     doc.font('Helvetica').fillColor('#ef4444').text(summary.worstAsset, rightCol + 120, yStart + 130);
 
     // Box destacado con estado general
@@ -171,8 +208,8 @@ export class PdfGeneratorService {
     doc.fillColor('#000000').fontSize(11).font('Helvetica')
       .text(
         summary.status === 'Positivo' 
-          ? `Tu portfolio está generando ganancias de $${this.formatNumber(summary.totalGainLoss)} (${summary.totalGainLossPercentage.toFixed(2)}%). Mantén tu estrategia y considera las recomendaciones para optimizar.`
-          : `Tu portfolio tiene pérdidas de $${this.formatNumber(Math.abs(summary.totalGainLoss))} (${Math.abs(summary.totalGainLossPercentage).toFixed(2)}%). Revisa las recomendaciones para mejorar la situación.`,
+          ? `Tu portfolio esta generando ganancias de $${this.formatNumber(summary.totalGainLoss)} (${summary.totalGainLossPercentage.toFixed(2)}%). Manten tu estrategia y considera las recomendaciones para optimizar.`
+          : `Tu portfolio tiene perdidas de $${this.formatNumber(Math.abs(summary.totalGainLoss))} (${Math.abs(summary.totalGainLossPercentage).toFixed(2)}%). Revisa las recomendaciones para mejorar la situacion.`,
         60,
         495,
         { width: 475, align: 'justify' }
@@ -180,7 +217,7 @@ export class PdfGeneratorService {
 
     // Footer
     doc.fontSize(9).fillColor('#888888')
-      .text('Página 1 de 10', 50, 750, { align: 'center', width: 495 });
+      .text('Pagina 1 de 10', 50, 750, { align: 'center', width: 495 });
   }
 
   // ==================== PÁGINA 2: DISTRIBUCIÓN ====================
@@ -189,13 +226,13 @@ export class PdfGeneratorService {
 
     // Header
     doc.fontSize(20).fillColor('#2563eb')
-      .text('DISTRIBUCIÓN POR TIPO DE ACTIVO', 50, 50);
+      .text(this.sanitizeText('DISTRIBUCION POR TIPO DE ACTIVO'), 50, 50);
 
     doc.moveTo(50, 80).lineTo(545, 80).stroke();
 
     // Gráfico de torta (simulado con texto)
     doc.fontSize(14).fillColor('#000000')
-      .text('Distribución de Inversión:', 50, 100);
+      .text(this.sanitizeText('Distribucion de Inversion:'), 50, 100);
 
     let yPos = 140;
     distribution.forEach((dist, index) => {
@@ -255,7 +292,7 @@ export class PdfGeneratorService {
     // Análisis
     yPos += 30;
     doc.fontSize(12).fillColor('#2563eb').font('Helvetica-Bold')
-      .text('💡 Análisis de Distribución:', 50, yPos);
+      .text(this.sanitizeText('💡 Analisis de Distribucion:'), 50, yPos);
 
     const mostInvested = distribution.reduce((prev, curr) => 
       curr.value > prev.value ? curr : prev
@@ -263,8 +300,8 @@ export class PdfGeneratorService {
 
     doc.fontSize(10).fillColor('#000000').font('Helvetica')
       .text(
-        `Tu mayor inversión está en ${mostInvested.type} con $${this.formatNumber(mostInvested.value)} (${mostInvested.percentage.toFixed(1)}%). ` +
-        `${distribution.length < 3 ? 'Considera diversificar en más tipos de activos para reducir riesgo.' : 'Tienes una buena diversificación por tipo de activo.'}`,
+        this.sanitizeText(`Tu mayor inversion esta en ${mostInvested.type} con $${this.formatNumber(mostInvested.value)} (${mostInvested.percentage.toFixed(1)}%). ` +
+        `${distribution.length < 3 ? 'Considera diversificar en mas tipos de activos para reducir riesgo.' : 'Tienes una buena diversificacion por tipo de activo.'}`),
         50,
         yPos + 25,
         { width: 495, align: 'justify' }
@@ -272,7 +309,7 @@ export class PdfGeneratorService {
 
     // Footer
     doc.fontSize(9).fillColor('#888888')
-      .text('Página 2 de 10', 50, 750, { align: 'center', width: 495 });
+      .text('Pagina 2 de 10', 50, 750, { align: 'center', width: 495 });
   }
 
   // ==================== PÁGINAS 3-4: DETALLE DE ACTIVOS ====================
@@ -389,7 +426,7 @@ export class PdfGeneratorService {
 
     // 🥇 TOP 5 MEJORES
     doc.fontSize(14).fillColor('#10b981').font('Helvetica-Bold')
-      .text('🥇 Top 5 Mejores Activos', 50, 100);
+      .text(this.sanitizeText('🥇 Top 5 Mejores Activos'), 50, 100);
 
     let yPos = 130;
 
@@ -399,7 +436,7 @@ export class PdfGeneratorService {
       doc.roundedRect(50, yPos, 495, 40, 5).fill('#f0fdf4');
       
       doc.fillColor('#000000').fontSize(12).font('Helvetica-Bold')
-        .text(`${medals[index]} ${asset.ticker} - ${asset.name}`, 60, yPos + 8);
+        .text(this.sanitizeText(`${medals[index]} ${asset.ticker} - ${asset.name}`), 60, yPos + 8);
 
       doc.fillColor('#10b981').fontSize(11).font('Helvetica')
         .text(
@@ -417,7 +454,7 @@ export class PdfGeneratorService {
     // 📉 ACTIVOS CON PÉRDIDAS
     yPos += 20;
     doc.fontSize(14).fillColor('#ef4444').font('Helvetica-Bold')
-      .text('📉 Activos con Pérdidas', 50, yPos);
+      .text(this.sanitizeText('📉 Activos con Perdidas'), 50, yPos);
 
     yPos += 30;
 
@@ -441,7 +478,7 @@ export class PdfGeneratorService {
       });
     } else {
       doc.fillColor('#10b981').fontSize(11).font('Helvetica')
-        .text('✅ ¡Excelente! Todos tus activos están en ganancia.', 60, yPos);
+        .text(this.sanitizeText('✅ ¡Excelente! Todos tus activos estan en ganancia.'), 60, yPos);
       yPos += 30;
     }
 
@@ -450,7 +487,7 @@ export class PdfGeneratorService {
     doc.roundedRect(50, yPos, 495, 100, 5).fill('#f0f9ff');
     
     doc.fillColor('#2563eb').fontSize(12).font('Helvetica-Bold')
-      .text('📊 ESTADÍSTICAS GENERALES', 60, yPos + 10);
+      .text(this.sanitizeText('📊 ESTADISTICAS GENERALES'), 60, yPos + 10);
 
     doc.fillColor('#000000').fontSize(10).font('Helvetica')
       .text(`Activos ganadores: ${performanceStats.winnersCount} (${performanceStats.winnersPercentage.toFixed(1)}%)`, 60, yPos + 35)
@@ -460,7 +497,7 @@ export class PdfGeneratorService {
 
     // Footer
     doc.fillColor('#888888').fontSize(9)
-      .text('Página 5 de 10', 50, 750, { align: 'center', width: 495 });
+      .text('Pagina 5 de 10', 50, 750, { align: 'center', width: 495 });
   }
 
   // ==================== PÁGINA 6: DIVERSIFICACIÓN ====================
@@ -469,7 +506,7 @@ export class PdfGeneratorService {
 
     // Header
     doc.fontSize(20).fillColor('#2563eb')
-      .text('ANÁLISIS DE DIVERSIFICACIÓN', 50, 50);
+      .text(this.sanitizeText('ANALISIS DE DIVERSIFICACION'), 50, 50);
 
     doc.moveTo(50, 80).lineTo(545, 80).stroke();
 
@@ -477,7 +514,7 @@ export class PdfGeneratorService {
     doc.roundedRect(50, 100, 495, 80, 5).fill('#f0f9ff');
     
     doc.fillColor('#2563eb').fontSize(16).font('Helvetica-Bold')
-      .text('SCORE DE DIVERSIFICACIÓN', 60, 115);
+      .text('SCORE DE DIVERSIFICACION', 60, 115);
 
     doc.fontSize(40).font('Helvetica-Bold')
       .text(`${diversificationAnalysis.score}/100`, 60, 140);
@@ -502,7 +539,7 @@ export class PdfGeneratorService {
     // Top 10 activos
     let yPos = 250;
     doc.fillColor('#000000').fontSize(14).font('Helvetica-Bold')
-      .text('Top 10 Activos por Tamaño:', 50, yPos);
+      .text(this.sanitizeText('Top 10 Activos por Tamaño:'), 50, yPos);
 
     yPos += 30;
 
@@ -525,17 +562,17 @@ export class PdfGeneratorService {
     doc.roundedRect(50, yPos, 495, 80, 5).fill('#fef3c7');
     
     doc.fillColor('#92400e').fontSize(12).font('Helvetica-Bold')
-      .text('💡 RECOMENDACIÓN', 60, yPos + 10);
+      .text(this.sanitizeText('💡 RECOMENDACION'), 60, yPos + 10);
 
     doc.fillColor('#000000').fontSize(10).font('Helvetica')
-      .text(diversificationAnalysis.recommendation, 60, yPos + 35, {
+      .text(this.sanitizeText(diversificationAnalysis.recommendation), 60, yPos + 35, {
         width: 475,
         align: 'justify'
       });
 
     // Footer
     doc.fillColor('#888888').fontSize(9)
-      .text('Página 6 de 10', 50, 750, { align: 'center', width: 495 });
+      .text('Pagina 6 de 10', 50, 750, { align: 'center', width: 495 });
   }
 
   // ==================== PÁGINA 7: ANÁLISIS DE RIESGO ====================
@@ -544,7 +581,7 @@ export class PdfGeneratorService {
 
     // Header
     doc.fontSize(20).fillColor('#2563eb')
-      .text('ANÁLISIS DE RIESGO', 50, 50);
+      .text(this.sanitizeText('ANALISIS DE RIESGO'), 50, 50);
 
     doc.moveTo(50, 80).lineTo(545, 80).stroke();
 
@@ -575,40 +612,40 @@ export class PdfGeneratorService {
 
     doc.roundedRect(305, yPos, 240, 60, 5).fill('#f9fafb');
     doc.fillColor('#000000').fontSize(12).font('Helvetica-Bold')
-      .text('Exposición Crypto:', 315, yPos + 15);
+      .text(this.sanitizeText('Exposicion Crypto:'), 315, yPos + 15);
     doc.fontSize(14).font('Helvetica')
       .text(`${riskAnalysis.cryptoExposure.toFixed(1)}%`, 315, yPos + 35);
 
     // Factores de riesgo
     yPos += 80;
     doc.fontSize(14).fillColor('#2563eb').font('Helvetica-Bold')
-      .text('⚠️ Factores de Riesgo Identificados:', 50, yPos);
+      .text(this.sanitizeText('⚠️ Factores de Riesgo Identificados:'), 50, yPos);
 
     yPos += 30;
 
     riskAnalysis.factors.forEach((factor) => {
       doc.fontSize(11).fillColor('#000000').font('Helvetica')
-        .text(`• ${factor}`, 60, yPos);
+        .text(this.sanitizeText(`• ${factor}`), 60, yPos);
       yPos += 25;
     });
 
     // Advertencias
     yPos += 20;
     doc.fontSize(14).fillColor('#ef4444').font('Helvetica-Bold')
-      .text('🚨 Advertencias:', 50, yPos);
+      .text(this.sanitizeText('🚨 Advertencias:'), 50, yPos);
 
     yPos += 30;
 
     riskAnalysis.warnings.forEach((warning) => {
       doc.roundedRect(50, yPos, 495, 35, 5).fill('#fee2e2');
       doc.fontSize(10).fillColor('#000000').font('Helvetica')
-        .text(warning, 60, yPos + 10, { width: 475 });
+        .text(this.sanitizeText(warning), 60, yPos + 10, { width: 475 });
       yPos += 45;
     });
 
     // Footer
     doc.fillColor('#888888').fontSize(9)
-      .text('Página 7 de 10', 50, 750, { align: 'center', width: 495 });
+      .text('Pagina 7 de 10', 50, 750, { align: 'center', width: 495 });
   }
 
   // ==================== PÁGINA 8: RECOMENDACIONES ====================
@@ -617,7 +654,7 @@ export class PdfGeneratorService {
 
     // Header
     doc.fontSize(20).fillColor('#2563eb')
-      .text('🎯 RECOMENDACIONES PERSONALIZADAS', 50, 50);
+      .text(this.sanitizeText('🎯 RECOMENDACIONES PERSONALIZADAS'), 50, 50);
 
     doc.moveTo(50, 80).lineTo(545, 80).stroke();
 
@@ -639,7 +676,7 @@ export class PdfGeneratorService {
       // Título de prioridad
       const colors = priorityColors[priority];
       doc.fontSize(14).fillColor(colors.title).font('Helvetica-Bold')
-        .text(`${colors.icon} PRIORIDAD ${priority.toUpperCase()}`, 50, yPos);
+        .text(this.sanitizeText(`${colors.icon} PRIORIDAD ${priority.toUpperCase()}`), 50, yPos);
 
       yPos += 30;
 
@@ -653,16 +690,16 @@ export class PdfGeneratorService {
         doc.roundedRect(50, yPos, 495, 120, 5).fill(colors.bg);
 
         doc.fillColor('#000000').fontSize(12).font('Helvetica-Bold')
-          .text(`${index + 1}. ${rec.title}`, 60, yPos + 10);
+          .text(this.sanitizeText(`${index + 1}. ${rec.title}`), 60, yPos + 10);
 
         doc.fontSize(10).font('Helvetica')
-          .text(rec.description, 60, yPos + 30, { width: 475, align: 'justify' });
+          .text(this.sanitizeText(rec.description), 60, yPos + 30, { width: 475, align: 'justify' });
 
         doc.fillColor(colors.title).fontSize(10).font('Helvetica-Bold')
-          .text('Acción sugerida:', 60, yPos + 65);
+          .text(this.sanitizeText('Accion sugerida:'), 60, yPos + 65);
 
         doc.fillColor('#000000').fontSize(9).font('Helvetica')
-          .text(rec.action, 60, yPos + 80, { width: 475, align: 'justify' });
+          .text(this.sanitizeText(rec.action), 60, yPos + 80, { width: 475, align: 'justify' });
 
         yPos += 130;
       });
@@ -672,27 +709,27 @@ export class PdfGeneratorService {
 
     // Footer
     doc.fillColor('#888888').fontSize(9)
-      .text('Página 8 de 10', 50, 750, { align: 'center', width: 495 });
+      .text('Pagina 8 de 10', 50, 750, { align: 'center', width: 495 });
   }
 
   // ==================== PÁGINA 9: GRÁFICOS ====================
   private async addChartsPage(doc: typeof PDFDocument, data: CompleteReportData) {
     // Header
     doc.fontSize(20).fillColor('#2563eb')
-      .text('GRÁFICOS Y VISUALIZACIONES', 50, 50);
+      .text(this.sanitizeText('GRAFICOS Y VISUALIZACIONES'), 50, 50);
 
     doc.moveTo(50, 80).lineTo(545, 80).stroke();
 
     // Gráfico 1: Distribución por tipo
     doc.fontSize(14).fillColor('#000000').font('Helvetica-Bold')
-      .text('Distribución por Tipo de Activo', 50, 100);
+      .text(this.sanitizeText('Distribucion por Tipo de Activo'), 50, 100);
 
     try {
       const pieChartImage = await this.generatePieChart(data.distribution);
       doc.image(pieChartImage, 75, 130, { width: 450 });
     } catch (error) {
       doc.fontSize(10).fillColor('#666666')
-        .text('(Gráfico no disponible)', 200, 300);
+        .text(this.sanitizeText('(Grafico no disponible)'), 200, 300);
     }
 
     // Gráfico 2: Top 5 performers
@@ -729,41 +766,41 @@ export class PdfGeneratorService {
 
     // Próximos pasos
     doc.fontSize(14).fillColor('#2563eb').font('Helvetica-Bold')
-      .text('✅ Próximos Pasos Sugeridos:', 50, 100);
+      .text(this.sanitizeText('✅ Proximos Pasos Sugeridos:'), 50, 100);
 
     doc.fontSize(10).fillColor('#000000').font('Helvetica')
       .text('1. Revisa las recomendaciones de prioridad ALTA', 60, 130)
-      .text('2. Analiza los activos con pérdidas significativas', 60, 150)
+      .text(this.sanitizeText('2. Analiza los activos con perdidas significativas'), 60, 150)
       .text('3. Considera rebalancear tu portfolio trimestralmente', 60, 170)
-      .text('4. Mantén un seguimiento regular de tus inversiones', 60, 190)
+      .text(this.sanitizeText('4. Manten un seguimiento regular de tus inversiones'), 60, 190)
       .text('5. Consulta con un asesor financiero para decisiones importantes', 60, 210);
 
     // Información de contacto
     doc.fontSize(14).fillColor('#2563eb').font('Helvetica-Bold')
-      .text('📧 Información de Contacto:', 50, 250);
+      .text(this.sanitizeText('📧 Informacion de Contacto:'), 50, 250);
 
     doc.fontSize(10).fillColor('#000000').font('Helvetica')
       .text('Email: soporte@financepr.com', 60, 280)
       .text('Web: www.financepr.com', 60, 300)
-      .text('Teléfono: +54 11 1234-5678', 60, 320);
+      .text(this.sanitizeText('Telefono: +54 11 1234-5678'), 60, 320);
 
     // Disclaimer legal
     doc.fontSize(14).fillColor('#ef4444').font('Helvetica-Bold')
-      .text('⚠️ DISCLAIMER LEGAL', 50, 370);
+      .text(this.sanitizeText('⚠️ DISCLAIMER LEGAL'), 50, 370);
 
     doc.roundedRect(50, 400, 495, 200, 5).fill('#f9fafb');
 
     doc.fontSize(9).fillColor('#000000').font('Helvetica')
       .text(
-        'Este informe es generado automáticamente por FINANCEPR y tiene fines informativos únicamente. ' +
-        'No constituye asesoramiento financiero, de inversión, legal o fiscal. Las recomendaciones ' +
-        'presentadas se basan en análisis algorítmicos y no deben considerarse como consejos personalizados.\n\n' +
+        this.sanitizeText('Este informe es generado automaticamente por FINANCEPR y tiene fines informativos unicamente. ' +
+        'No constituye asesoramiento financiero, de inversion, legal o fiscal. Las recomendaciones ' +
+        'presentadas se basan en analisis algoritmicos y no deben considerarse como consejos personalizados.\n\n' +
         'Los valores de activos mostrados pueden no reflejar precios de mercado en tiempo real. ' +
-        'Las inversiones en instrumentos financieros conllevan riesgos, incluyendo la posible pérdida ' +
+        'Las inversiones en instrumentos financieros conllevan riesgos, incluyendo la posible perdida ' +
         'del capital invertido. El rendimiento pasado no garantiza resultados futuros.\n\n' +
         'Recomendamos encarecidamente consultar con un asesor financiero certificado antes de tomar ' +
-        'decisiones de inversión. FINANCEPR no se hace responsable de pérdidas o daños derivados del ' +
-        'uso de este informe.',
+        'decisiones de inversion. FINANCEPR no se hace responsable de perdidas o daños derivados del ' +
+        'uso de este informe.'),
         60,
         410,
         { width: 475, align: 'justify', lineGap: 3 }
@@ -773,7 +810,7 @@ export class PdfGeneratorService {
     doc.fontSize(8).fillColor('#666666')
       .text(`ID Reporte: ${data.reportId}`, 50, 620)
       .text(`Generado: ${new Date(data.generatedAt).toLocaleString('es-ES')}`, 50, 635)
-      .text(`Versión: FINANCEPR ${data.version}`, 50, 650);
+      .text(`Version: FINANCEPR ${data.version}`, 50, 650);
 
     // Footer final
     doc.rect(0, 720, 600, 100).fill('#2563eb');
