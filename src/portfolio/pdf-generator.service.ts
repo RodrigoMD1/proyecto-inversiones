@@ -52,6 +52,13 @@ export class PdfGeneratorService {
       .replace(/[\u{2700}-\u{27BF}]/gu, '');  // Dingbats
   }
 
+  // Helper para asegurar que un valor sea numérico
+  private safeNumber(value: any, defaultValue: number = 0): number {
+    if (value === null || value === undefined || value === '') return defaultValue;
+    const num = Number(value);
+    return isNaN(num) ? defaultValue : num;
+  }
+
   async generatePdf(reportData: CompleteReportData): Promise<Buffer> {
     return new Promise(async (resolve, reject) => {
       try {
@@ -383,7 +390,7 @@ export class PdfGeneratorService {
         
         // Ticker - con ancho fijo
         doc.text(
-          asset.ticker.length > 6 ? asset.ticker.substring(0, 6) : asset.ticker, 
+          asset.ticker && asset.ticker.length > 6 ? asset.ticker.substring(0, 6) : (asset.ticker || 'N/A'), 
           cols.ticker, 
           yPos + 5,
           { width: 45, ellipsis: true, lineBreak: false }
@@ -391,15 +398,15 @@ export class PdfGeneratorService {
         
         // Nombre - con ancho fijo
         doc.text(
-          asset.name.length > 15 ? asset.name.substring(0, 15) : asset.name, 
+          asset.name && asset.name.length > 15 ? asset.name.substring(0, 15) : (asset.name || 'Sin nombre'), 
           cols.nombre, 
           yPos + 5,
           { width: 90, ellipsis: true, lineBreak: false }
         );
         
-        // Cantidad
+        // Cantidad - PROTEGIDO contra valores no numéricos
         doc.text(
-          asset.quantity.toFixed(2), 
+          this.safeNumber(asset.quantity, 0).toFixed(2), 
           cols.cantidad, 
           yPos + 5,
           { width: 60, lineBreak: false }
@@ -430,10 +437,12 @@ export class PdfGeneratorService {
         );
 
         // Ganancia/Pérdida
-        const gainColor = asset.gainLoss >= 0 ? '#10b981' : '#ef4444';
+        const gainLoss = this.safeNumber(asset.gainLoss, 0);
+        const gainLossPercentage = this.safeNumber(asset.gainLossPercentage, 0);
+        const gainColor = gainLoss >= 0 ? '#10b981' : '#ef4444';
         doc.fillColor(gainColor)
           .text(
-            `${asset.gainLoss >= 0 ? '+' : ''}${asset.gainLossPercentage.toFixed(1)}%`,
+            `${gainLoss >= 0 ? '+' : ''}${gainLossPercentage.toFixed(1)}%`,
             cols.ganancia,
             yPos + 5,
             { width: 60, lineBreak: false }
@@ -917,11 +926,12 @@ export class PdfGeneratorService {
   }
 
   // ==================== HELPERS ====================
-  private formatNumber(num: number): string {
+  private formatNumber(num: any): string {
+    const safeNum = this.safeNumber(num, 0);
     return new Intl.NumberFormat('es-AR', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
-    }).format(num);
+    }).format(safeNum);
   }
 
   private async generatePieChart(distribution: any[]): Promise<Buffer> {
