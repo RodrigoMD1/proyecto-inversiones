@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test CORS Production</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .warning { background: #fff3cd; color: #856404; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Diagnóstico CORS - Production</h1>
+    
+    <div class="test-section">
+        <h3>1. Test OPTIONS (Preflight)</h3>
+        <button onclick="testOptions()">Probar OPTIONS</button>
+        <div id="optionsResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>2. Test POST con Token</h3>
+        <input type="text" id="tokenInput" placeholder="Pega tu JWT token aquí" style="width: 100%; padding: 8px; margin-bottom: 10px;">
+        <button onclick="testPost()">Probar POST</button>
+        <div id="postResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>3. Test GET API Health</h3>
+        <button onclick="testHealth()">Probar Health Check</button>
+        <div id="healthResult" class="result"></div>
+    </div>
+
+    <script>
+        const API_URL = 'https://proyecto-inversiones.onrender.com';
+
+        async function testOptions() {
+            const resultDiv = document.getElementById('optionsResult');
+            resultDiv.innerHTML = '⏳ Probando OPTIONS...';
+            
+            try {
+                const response = await fetch(`${API_URL}/api/portfolio/report/generate`, {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Origin': 'http://localhost:5173',
+                        'Access-Control-Request-Method': 'POST',
+                        'Access-Control-Request-Headers': 'authorization,content-type'
+                    }
+                });
+
+                const headers = {};
+                response.headers.forEach((value, key) => {
+                    headers[key] = value;
+                });
+
+                resultDiv.className = 'result ' + (response.ok ? 'success' : 'error');
+                resultDiv.innerHTML = `
+Status: ${response.status} ${response.statusText}
+
+Headers de respuesta:
+${JSON.stringify(headers, null, 2)}
+
+✅ Verificar que tenga:
+- access-control-allow-origin: http://localhost:5173
+- access-control-allow-methods: debe incluir POST
+- access-control-allow-credentials: true
+                `;
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `❌ Error: ${error.message}\n\nStack: ${error.stack}`;
+            }
+        }
+
+        async function testPost() {
+            const resultDiv = document.getElementById('postResult');
+            const token = document.getElementById('tokenInput').value;
+            
+            if (!token) {
+                resultDiv.className = 'result warning';
+                resultDiv.innerHTML = '⚠️ Por favor ingresa un token JWT';
+                return;
+            }
+
+            resultDiv.innerHTML = '⏳ Probando POST...';
+            
+            try {
+                const response = await fetch(`${API_URL}/api/portfolio/report/generate`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const headers = {};
+                response.headers.forEach((value, key) => {
+                    headers[key] = value;
+                });
+
+                let body = '';
+                if (response.ok) {
+                    const blob = await response.blob();
+                    body = `PDF Blob recibido: ${blob.size} bytes\nTipo: ${blob.type}`;
+                } else {
+                    body = await response.text();
+                }
+
+                resultDiv.className = 'result ' + (response.ok ? 'success' : 'error');
+                resultDiv.innerHTML = `
+Status: ${response.status} ${response.statusText}
+
+Headers:
+${JSON.stringify(headers, null, 2)}
+
+Body:
+${body}
+                `;
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `❌ Error: ${error.message}\n\nStack: ${error.stack}`;
+            }
+        }
+
+        async function testHealth() {
+            const resultDiv = document.getElementById('healthResult');
+            resultDiv.innerHTML = '⏳ Probando health check...';
+            
+            try {
+                const response = await fetch(`${API_URL}/api`);
+                const text = await response.text();
+
+                resultDiv.className = 'result ' + (response.ok ? 'success' : 'error');
+                resultDiv.innerHTML = `
+Status: ${response.status} ${response.statusText}
+
+Respuesta: ${text.substring(0, 500)}...
+                `;
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `❌ Error: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>

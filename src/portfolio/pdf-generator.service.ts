@@ -825,31 +825,48 @@ export class PdfGeneratorService {
     doc.fontSize(14).fillColor('#000000').font('Helvetica-Bold')
       .text(this.sanitizeText('Distribucion por Tipo de Activo'), 50, 100);
 
-    try {
-      const pieChartImage = await this.generatePieChart(data.distribution);
-      doc.image(pieChartImage, 75, 130, { width: 450 });
-    } catch (error) {
-      doc.fontSize(10).fillColor('#666666')
-        .text(this.sanitizeText('(Grafico no disponible)'), 200, 300);
-    }
+    // OPTIMIZACIÓN: Gráfico ChartJS comentado temporalmente por performance
+    // Mostrar distribución con barras simples
+    let yPosChart = 130;
+    const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+    data.distribution.forEach((item, index) => {
+      const barWidth = (item.percentage / 100) * 400;
+      const color = colors[index % colors.length];
+      
+      doc.rect(150, yPosChart, barWidth, 25).fill(color);
+      
+      doc.fillColor('#000000').fontSize(10)
+        .text(this.sanitizeText(item.type), 50, yPosChart + 7)
+        .text(`${item.percentage.toFixed(1)}%`, barWidth + 160, yPosChart + 7);
+
+      yPosChart += 35;
+    });
+
+    // try {
+    //   const pieChartImage = await this.generatePieChart(data.distribution);
+    //   doc.image(pieChartImage, 75, 130, { width: 450 });
+    // } catch (error) {
+    //   doc.fontSize(10).fillColor('#666666')
+    //     .text(this.sanitizeText('(Grafico no disponible)'), 200, 300);
+    // }
 
     // Gráfico 2: Top 5 performers
     doc.fontSize(14).fillColor('#000000').font('Helvetica-Bold')
       .text('Top 5 Activos por Ganancia', 50, 450);
 
     // Simulación de barras
-    let yPos = 480;
+    let yPosPerformers = 480;
     data.topPerformers.slice(0, 5).forEach((asset) => {
       const barWidth = Math.abs(asset.gainLossPercentage) * 3;
       const color = asset.gainLoss >= 0 ? '#10b981' : '#ef4444';
       
-      doc.rect(150, yPos, barWidth, 20).fill(color);
+      doc.rect(150, yPosPerformers, barWidth, 20).fill(color);
       
       doc.fillColor('#000000').fontSize(9)
-        .text(asset.ticker, 50, yPos + 5)
-        .text(`${asset.gainLossPercentage.toFixed(1)}%`, barWidth + 160, yPos + 5);
+        .text(asset.ticker, 50, yPosPerformers + 5)
+        .text(`${asset.gainLossPercentage.toFixed(1)}%`, barWidth + 160, yPosPerformers + 5);
 
-      yPos += 30;
+      yPosPerformers += 30;
     });
 
     // Footer

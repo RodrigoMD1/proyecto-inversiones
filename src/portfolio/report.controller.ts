@@ -44,17 +44,24 @@ export class ReportController {
     @Req() req: Request, 
     @Res() res: Response,
   ) {
+    const startTime = Date.now();
     const userId = (req.user as any)?.id;
     if (!userId) {
       return res.status(401).json({ message: 'No autorizado' });
     }
 
     try {
+      console.log(`[${new Date().toISOString()}] 📊 Iniciando generación de reporte para usuario ${userId}`);
+      
       // 1. Generar análisis completo de datos
+      const dataStart = Date.now();
       const reportData = await this.reportAnalysisService.generateCompleteReportData(userId);
+      console.log(`[${new Date().toISOString()}] ✅ Análisis completado en ${Date.now() - dataStart}ms`);
 
       // 2. Generar PDF de 10 páginas
+      const pdfStart = Date.now();
       const pdfBuffer = await this.pdfGeneratorService.generatePdf(reportData);
+      console.log(`[${new Date().toISOString()}] ✅ PDF generado en ${Date.now() - pdfStart}ms`);
 
       // 3. Enviar PDF
       const fileName = `Informe_${reportData.reportId}_${new Date().getTime()}.pdf`;
@@ -64,8 +71,10 @@ export class ReportController {
       res.setHeader('Content-Length', pdfBuffer.length.toString());
       
       res.send(pdfBuffer);
+      
+      console.log(`[${new Date().toISOString()}] 🎉 Reporte enviado. Tiempo total: ${Date.now() - startTime}ms`);
     } catch (error) {
-      console.error('Error generando reporte:', error);
+      console.error(`[${new Date().toISOString()}] ❌ Error generando reporte después de ${Date.now() - startTime}ms:`, error);
       return res.status(500).json({ 
         message: 'Error generando reporte', 
         error: error.message 
