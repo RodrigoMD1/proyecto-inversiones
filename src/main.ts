@@ -21,13 +21,16 @@ async function bootstrap() {
    app.enableCors({
     origin: [
       'http://localhost:5173', 
-      'http://localhost:5174', // Agregado el puerto 5174
-      'http://localhost:3000', // Puerto del backend para testing
+      'http://localhost:5174',
+      'http://localhost:3000',
       'https://financepr.netlify.app'
-    ], // URLs permitidas
+    ],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+    exposedHeaders: ['Content-Disposition', 'Content-Type', 'Content-Length'],
+    preflightContinue: false,
+    optionsSuccessStatus: 204
    });
 
 

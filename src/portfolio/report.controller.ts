@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common';
 import { Response, Request } from 'express';
 import { AuthGuard } from '@nestjs/passport';
+import { JwtOptionalPreflightGuard } from '../auth/guards/jwt-optional-preflight.guard';
 import { ReportService } from './report.service';
 import { ReportAnalysisService } from './report-analysis.service';
 import { PdfGeneratorService } from './pdf-generator.service';
@@ -32,7 +33,7 @@ export class ReportController {
   }
 
   // Endpoint NUEVO (completo con 10 páginas)
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(JwtOptionalPreflightGuard)
   @Post('generate')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Generar informe completo de 10 páginas con análisis avanzado' })
