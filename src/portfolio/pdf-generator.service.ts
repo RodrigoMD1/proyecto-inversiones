@@ -116,9 +116,9 @@ export class PdfGeneratorService {
     // Header con color
     doc.rect(0, 0, 600, 100).fill('#2563eb');
     
-    // Título
+    // Título - SIN emoji para evitar [DIV]
     doc.fontSize(28).fillColor('#ffffff')
-      .text(this.sanitizeText('📊 INFORME FINANCIERO'), 50, 30, { align: 'center' });
+      .text('INFORME FINANCIERO', 50, 30, { align: 'center' });
     
     doc.fontSize(16).fillColor('#ffffff')
       .text('FINANCEPR v' + version, 50, 70, { align: 'center' });
@@ -324,6 +324,18 @@ export class PdfGeneratorService {
 
     let yPos = 100;
     const PAGE_HEIGHT = 700;
+    const ROW_HEIGHT = 18; // Altura fija para cada fila
+
+    // Definir posiciones X fijas para cada columna
+    const cols = {
+      ticker: 55,
+      nombre: 105,
+      cantidad: 200,
+      precioCompra: 265,
+      precioActual: 340,
+      valor: 410,
+      ganancia: 480
+    };
 
     // Agrupar por tipo
     distribution.forEach((dist) => {
@@ -346,13 +358,13 @@ export class PdfGeneratorService {
       // Header de tabla mini
       doc.rect(50, yPos, 495, 25).fill('#e5e7eb');
       doc.fillColor('#000000').fontSize(9).font('Helvetica-Bold')
-        .text('Ticker', 55, yPos + 8)
-        .text('Nombre', 105, yPos + 8)
-        .text('Cant.', 220, yPos + 8)
-        .text('P. Compra', 270, yPos + 8)
-        .text('P. Actual', 340, yPos + 8)
-        .text('Valor', 410, yPos + 8)
-        .text('Gan/Pér', 480, yPos + 8);
+        .text('Ticker', cols.ticker, yPos + 8)
+        .text('Nombre', cols.nombre, yPos + 8)
+        .text('Cant.', cols.cantidad, yPos + 8)
+        .text('P. Compra', cols.precioCompra, yPos + 8)
+        .text('P. Actual', cols.precioActual, yPos + 8)
+        .text('Valor', cols.valor, yPos + 8)
+        .text('Gan/Per', cols.ganancia, yPos + 8);
 
       yPos += 25;
 
@@ -365,34 +377,79 @@ export class PdfGeneratorService {
         subtotalCurrent += asset.currentValue;
 
         const bgColor = index % 2 === 0 ? '#ffffff' : '#f9fafb';
-        doc.rect(50, yPos, 495, 20).fill(bgColor);
+        doc.rect(50, yPos, 495, ROW_HEIGHT).fill(bgColor);
 
-        doc.fillColor('#000000').fontSize(8).font('Helvetica')
-          .text(asset.ticker, 55, yPos + 6, { width: 45 })
-          .text(asset.name.substring(0, 20), 105, yPos + 6, { width: 110 })
-          .text(asset.quantity.toString(), 220, yPos + 6)
-          .text(`$${this.formatNumber(asset.purchasePrice)}`, 270, yPos + 6)
-          .text(`$${this.formatNumber(asset.currentPrice)}`, 340, yPos + 6)
-          .text(`$${this.formatNumber(asset.currentValue)}`, 410, yPos + 6);
+        doc.fillColor('#000000').fontSize(8).font('Helvetica');
+        
+        // Ticker - con ancho fijo
+        doc.text(
+          asset.ticker.length > 6 ? asset.ticker.substring(0, 6) : asset.ticker, 
+          cols.ticker, 
+          yPos + 5,
+          { width: 45, ellipsis: true, lineBreak: false }
+        );
+        
+        // Nombre - con ancho fijo
+        doc.text(
+          asset.name.length > 15 ? asset.name.substring(0, 15) : asset.name, 
+          cols.nombre, 
+          yPos + 5,
+          { width: 90, ellipsis: true, lineBreak: false }
+        );
+        
+        // Cantidad
+        doc.text(
+          asset.quantity.toFixed(2), 
+          cols.cantidad, 
+          yPos + 5,
+          { width: 60, lineBreak: false }
+        );
+        
+        // Precio Compra
+        doc.text(
+          `$${this.formatNumber(asset.purchasePrice)}`, 
+          cols.precioCompra, 
+          yPos + 5,
+          { width: 70, lineBreak: false }
+        );
+        
+        // Precio Actual
+        doc.text(
+          `$${this.formatNumber(asset.currentPrice)}`, 
+          cols.precioActual, 
+          yPos + 5,
+          { width: 65, lineBreak: false }
+        );
+        
+        // Valor
+        doc.text(
+          `$${this.formatNumber(asset.currentValue)}`, 
+          cols.valor, 
+          yPos + 5,
+          { width: 65, lineBreak: false }
+        );
 
+        // Ganancia/Pérdida
         const gainColor = asset.gainLoss >= 0 ? '#10b981' : '#ef4444';
         doc.fillColor(gainColor)
           .text(
             `${asset.gainLoss >= 0 ? '+' : ''}${asset.gainLossPercentage.toFixed(1)}%`,
-            480,
-            yPos + 6
+            cols.ganancia,
+            yPos + 5,
+            { width: 60, lineBreak: false }
           );
 
-        yPos += 20;
+        yPos += ROW_HEIGHT;
       });
 
       // Subtotal
       yPos += 5;
-      doc.rect(50, yPos, 495, 25).fill('#dbeafe');
-      doc.fillColor('#000000').fontSize(9).font('Helvetica-Bold')
-        .text('SUBTOTAL:', 55, yPos + 8)
-        .text(`$${this.formatNumber(subtotalInvested)}`, 270, yPos + 8)
-        .text(`$${this.formatNumber(subtotalCurrent)}`, 410, yPos + 8);
+      doc.rect(50, yPos, 495, 22).fill('#dbeafe');
+      doc.fillColor('#000000').fontSize(9).font('Helvetica-Bold');
+      
+      doc.text('SUBTOTAL:', cols.ticker, yPos + 6);
+      doc.text(`$${this.formatNumber(subtotalInvested)}`, cols.precioCompra, yPos + 6, { width: 70, lineBreak: false });
+      doc.text(`$${this.formatNumber(subtotalCurrent)}`, cols.valor, yPos + 6, { width: 65, lineBreak: false });
 
       const subtotalGain = subtotalCurrent - subtotalInvested;
       const subtotalGainPct = (subtotalGain / subtotalInvested) * 100;
@@ -400,18 +457,18 @@ export class PdfGeneratorService {
       
       doc.fillColor(gainColor)
         .text(
-          `${subtotalGain >= 0 ? '+' : ''}$${this.formatNumber(Math.abs(subtotalGain))} (${subtotalGainPct.toFixed(1)}%)`,
-          340,
-          yPos + 8,
-          { width: 200, align: 'right' }
+          `${subtotalGain >= 0 ? '+' : ''}${subtotalGainPct.toFixed(1)}%`,
+          cols.ganancia,
+          yPos + 6,
+          { width: 60, lineBreak: false }
         );
 
-      yPos += 45;
+      yPos += 35;
     });
 
     // Footer
     doc.fillColor('#888888').fontSize(9)
-      .text('Páginas 3-4 de 10', 50, 750, { align: 'center', width: 495 });
+      .text('Paginas 3-4 de 10', 50, 750, { align: 'center', width: 495 });
   }
 
   // ==================== PÁGINA 5: TOP PERFORMERS ====================
@@ -543,18 +600,53 @@ export class PdfGeneratorService {
 
     yPos += 30;
 
+    const ROW_HEIGHT = 22; // Altura fija para cada fila
+    
     diversificationAnalysis.topAssets.slice(0, 10).forEach((asset, index) => {
-      doc.fontSize(10).font('Helvetica')
-        .text(`${index + 1}. ${asset.ticker}`, 55, yPos)
-        .text(asset.name.substring(0, 30), 130, yPos)
-        .text(`$${this.formatNumber(asset.value)}`, 350, yPos)
-        .text(`${asset.percentage.toFixed(1)}%`, 480, yPos);
+      // Fondo alternado
+      if (index % 2 === 0) {
+        doc.rect(50, yPos - 2, 495, ROW_HEIGHT).fill('#f9fafb');
+      }
+      
+      doc.fillColor('#000000').fontSize(10).font('Helvetica');
+      
+      // Número y Ticker
+      doc.text(
+        `${index + 1}. ${asset.ticker}`, 
+        55, 
+        yPos,
+        { width: 70, lineBreak: false }
+      );
+      
+      // Nombre
+      doc.text(
+        asset.name.length > 20 ? asset.name.substring(0, 20) : asset.name, 
+        130, 
+        yPos,
+        { width: 110, ellipsis: true, lineBreak: false }
+      );
+      
+      // Valor
+      doc.text(
+        `$${this.formatNumber(asset.value)}`, 
+        250, 
+        yPos,
+        { width: 100, lineBreak: false }
+      );
+      
+      // Porcentaje
+      doc.text(
+        `${asset.percentage.toFixed(1)}%`, 
+        360, 
+        yPos,
+        { width: 50, lineBreak: false }
+      );
 
-      // Barra mini
-      const miniBarWidth = (asset.percentage / 100) * 200;
-      doc.rect(280, yPos + 2, miniBarWidth, 10).fill('#3b82f6');
+      // Barra mini - DESPUÉS del texto, en posición separada
+      const miniBarWidth = Math.min((asset.percentage / 100) * 100, 100); // Máximo 100px
+      doc.rect(420, yPos + 3, miniBarWidth, 8).fill('#3b82f6');
 
-      yPos += 20;
+      yPos += ROW_HEIGHT;
     });
 
     // Recomendación
