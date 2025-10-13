@@ -15,18 +15,6 @@ export class PortfolioController {
   @UseGuards(AssetLimitGuard)
   @Auth(ValidRoles.usuario)
   async create(@Body() createPortfolioDto: CreatePortfolioDto, @GetUser() user: User) {
-    console.log('📥 POST /api/portfolio - Usuario:', user?.id);
-    console.log('📥 Datos recibidos:', JSON.stringify(createPortfolioDto, null, 2));
-    console.log('📥 Tipos de datos:', {
-      name: typeof createPortfolioDto.name,
-      description: typeof createPortfolioDto.description,
-      type: typeof createPortfolioDto.type,
-      quantity: typeof createPortfolioDto.quantity,
-      purchase_price: typeof createPortfolioDto.purchase_price,
-      purchase_date: typeof createPortfolioDto.purchase_date,
-      ticker: typeof createPortfolioDto.ticker
-    });
-    
     return await this.portfolioService.create(createPortfolioDto, user);
   }
 
