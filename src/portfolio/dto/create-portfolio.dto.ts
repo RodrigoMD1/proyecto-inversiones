@@ -1,4 +1,5 @@
 import { IsString, IsNotEmpty, IsNumber } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class CreatePortfolioDto {
   @IsString()
@@ -13,10 +14,12 @@ export class CreatePortfolioDto {
   @IsNotEmpty()
   type: string;
 
+  @Transform(({ value }) => Number(value))
   @IsNumber()
   @IsNotEmpty()
   quantity: number;
 
+  @Transform(({ value }) => Number(value))
   @IsNumber()
   @IsNotEmpty()
   purchase_price: number;
