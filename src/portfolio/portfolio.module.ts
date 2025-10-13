@@ -4,6 +4,7 @@ import { PortfolioService } from './portfolio.service';
 import { PortfolioController } from './portfolio.controller';
 import { PortfolioItem } from './entities/portfolio.entity';
 import { User } from 'src/auth/entities/user.entity';
+import { Asset } from '../assets/entities/asset.entity';
 import { UsersModule } from 'src/users/users.module';
 import { PassportModule } from '@nestjs/passport';
 import { ReportService } from './report.service';
@@ -16,7 +17,7 @@ import { PdfGeneratorService } from './pdf-generator.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([PortfolioItem, User]),
+    TypeOrmModule.forFeature([PortfolioItem, User, Asset]),
     UsersModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     EmailModule,

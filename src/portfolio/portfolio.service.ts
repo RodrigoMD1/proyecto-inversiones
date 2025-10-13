@@ -4,6 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PortfolioItem } from './entities/portfolio.entity';
 import { User } from '../auth/entities/user.entity';
+import { Asset } from '../assets/entities/asset.entity';
 import { CreatePortfolioDto } from './dto/create-portfolio.dto';
 import { UpdatePortfolioDto } from './dto/update-portfolio.dto';
 import fetch from 'node-fetch';
@@ -18,6 +19,9 @@ export class PortfolioService {
 
     @InjectRepository(User)
     private userRepository: Repository<User>,
+
+    @InjectRepository(Asset)
+    private assetRepository: Repository<Asset>,
   ) { }
 
   // Crear un nuevo portfolio
@@ -33,12 +37,22 @@ export class PortfolioService {
     let ticker = data.ticker;
     
     if (data.assetId && !name) {
-      // TODO: Aquí deberías buscar el asset en tu tabla de assets
-      // Por ahora, usar valores por defecto
-      name = `Asset ${data.assetId}`;
-      description = `Descripción del asset ${data.assetId}`;
-      type = 'Acción';
-      ticker = `ASSET${data.assetId}`;
+      // Buscar el asset en la base de datos
+      const asset = await this.assetRepository.findOne({ 
+        where: { id: data.assetId } 
+      });
+      
+      if (!asset) {
+        throw new NotFoundException(`Asset con ID ${data.assetId} no encontrado`);
+      }
+      
+      // Usar los datos reales del asset
+      name = asset.name;
+      ticker = asset.symbol;
+      type = asset.type === 'stock' ? 'Acción' : 
+             asset.type === 'crypto' ? 'Cripto' : 
+             asset.type === 'forex' ? 'Forex' : 'Acción';
+      description = asset.description || `Descripción de ${asset.name}`;
     }
 
     const portfolio = this.portfolioRepository.create({
