@@ -22,18 +22,40 @@ export class PortfolioService {
 
   // Crear un nuevo portfolio
   async create(data: CreatePortfolioDto, user: User): Promise<PortfolioItem> {
+    console.log('📦 PortfolioService.create - Datos recibidos:', data);
+    
+    // Normalizar campos: soportar tanto camelCase como snake_case
+    const purchasePrice = data.purchase_price || data.purchasePrice;
+    const purchaseDate = data.purchase_date || data.purchaseDate;
+    
+    // Si viene assetId, buscar la información del asset
+    let name = data.name;
+    let description = data.description;
+    let type = data.type;
+    let ticker = data.ticker;
+    
+    if (data.assetId && !name) {
+      // TODO: Aquí deberías buscar el asset en tu tabla de assets
+      // Por ahora, usar valores por defecto
+      console.log('⚠️ assetId recibido pero no implementado aún. Usando valores por defecto.');
+      name = `Asset ${data.assetId}`;
+      description = `Descripción del asset ${data.assetId}`;
+      type = 'Acción';
+      ticker = `ASSET${data.assetId}`;
+    }
 
     const portfolio = this.portfolioRepository.create({
-      name: data.name,
-      description: data.description,
-      type: data.type,
+      name,
+      description,
+      type,
       quantity: data.quantity,
-      purchase_price: data.purchase_price,
-      purchase_date: new Date(data.purchase_date),
-      ticker: data.ticker,
+      purchase_price: purchasePrice,
+      purchase_date: new Date(purchaseDate),
+      ticker,
       user: user,
     });
 
+    console.log('💾 PortfolioService.create - Guardando:', portfolio);
     return this.portfolioRepository.save(portfolio);
   }
 

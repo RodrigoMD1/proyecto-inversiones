@@ -16,7 +16,7 @@ async function bootstrap() {
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
-      forbidNonWhitelisted: true,
+      forbidNonWhitelisted: false, // Cambiado a false para permitir campos extra como assetId
       transform: true, // Permite transformar strings a numbers automáticamente
       exceptionFactory: (errors) => {
         console.log('❌ Errores de validación:', JSON.stringify(errors, null, 2));
