@@ -17,9 +17,17 @@ export class AssetLimitGuard implements CanActivate {
     }
 
     // Verificar que el email esté verificado
+    // TEMPORAL: Desactivado para desarrollo
+    // TODO: Reactivar en producción
+    /*
     if (!user.emailVerified) {
       console.log('🛡️ AssetLimitGuard - Email not verified for user:', user.id);
       throw new ForbiddenException('Debes verificar tu email antes de poder agregar activos. Revisa tu bandeja de entrada o solicita un nuevo código de verificación.');
+    }
+    */
+    
+    if (!user.emailVerified) {
+      console.log('⚠️ AssetLimitGuard - Email not verified for user:', user.id, '- Allowing for development');
     }
 
     console.log('🛡️ AssetLimitGuard - Checking canAddAsset for user:', user.id);

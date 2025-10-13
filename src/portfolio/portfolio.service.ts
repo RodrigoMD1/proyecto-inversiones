@@ -199,8 +199,19 @@ export class PortfolioService {
 
     if (items.length === 0) return [];
 
+    // Validar que date no sea undefined o null
+    if (!date || typeof date !== 'string') {
+      throw new Error('Fecha inválida. Formato requerido: YYYY-MM-DD');
+    }
+
     // Formato requerido por CoinGecko: DD-MM-YYYY
     const [year, month, day] = date.split('-');
+    
+    // Validar que todas las partes de la fecha existan
+    if (!year || !month || !day) {
+      throw new Error('Fecha inválida. Formato requerido: YYYY-MM-DD');
+    }
+    
     const formattedDate = `${day}-${month}-${year}`;
 
     const results = await Promise.all(items.map(async item => {

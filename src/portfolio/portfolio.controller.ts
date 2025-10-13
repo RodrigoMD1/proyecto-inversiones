@@ -73,6 +73,9 @@ export class PortfolioController {
     @Param('userId') userId: string,
     @Query('date') date: string
   ) {
+    if (!date) {
+      throw new BadRequestException('Parámetro "date" es requerido. Formato: YYYY-MM-DD');
+    }
     return await this.portfolioService.getPerformanceByDate(userId, date);
   }
 
