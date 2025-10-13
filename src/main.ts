@@ -2,11 +2,14 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { LoggingInterceptor } from './interceptors/logging.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const logger = new Logger('Bootstrap')
 
+  // Interceptor para loguear body RAW
+  app.useGlobalInterceptors(new LoggingInterceptor());
 
   app.setGlobalPrefix('api');
 
@@ -15,6 +18,10 @@ async function bootstrap() {
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true, // Permite transformar strings a numbers automáticamente
+      exceptionFactory: (errors) => {
+        console.log('❌ Errores de validación:', JSON.stringify(errors, null, 2));
+        return errors;
+      }
     })
   );
 
