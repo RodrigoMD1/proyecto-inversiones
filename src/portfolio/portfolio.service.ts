@@ -37,10 +37,14 @@ export class PortfolioService {
     let ticker = data.ticker;
     
     if (data.assetId && !name) {
+      console.log(`[PORTFOLIO] Buscando asset con ID: ${data.assetId}`);
+      
       // Buscar el asset en la base de datos
       const asset = await this.assetRepository.findOne({ 
         where: { id: data.assetId } 
       });
+      
+      console.log('[PORTFOLIO] Asset encontrado:', JSON.stringify(asset, null, 2));
       
       if (!asset) {
         throw new NotFoundException(`Asset con ID ${data.assetId} no encontrado`);
@@ -53,6 +57,8 @@ export class PortfolioService {
              asset.type === 'crypto' ? 'Cripto' : 
              asset.type === 'forex' ? 'Forex' : 'Acción';
       description = asset.description || `Descripción de ${asset.name}`;
+      
+      console.log(`[PORTFOLIO] Datos a guardar: name=${name}, ticker=${ticker}, type=${type}`);
     }
 
     const portfolio = this.portfolioRepository.create({
