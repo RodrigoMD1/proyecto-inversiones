@@ -100,6 +100,102 @@ export class AssetsService {
     return await this.assetRepository.find(); // Devuelve todos los activos
   }
 
+  // Buscar assets en Finnhub
+  async searchInFinnhub(query: string) {
+    console.log(`[ASSETS] Buscando en Finnhub: ${query}`);
+    
+    try {
+      // Buscar en Finnhub
+      const response = await fetch(
+        `https://finnhub.io/api/v1/search?q=${encodeURIComponent(query)}&token=${FINNHUB_API_KEY}`
+      );
+      const data = await response.json();
+      
+      if (!data.result || data.result.length === 0) {
+        return { results: [] };
+      }
+      
+      // Obtener detalles de los primeros 5 resultados
+      const detailedResults = await Promise.all(
+        data.result.slice(0, 5).map(async (item: any) => {
+          try {
+            const profileRes = await fetch(
+              `https://finnhub.io/api/v1/stock/profile2?symbol=${item.symbol}&token=${FINNHUB_API_KEY}`
+            );
+            const profile = await profileRes.json();
+            
+            return {
+              symbol: item.symbol,
+              name: profile.name || item.description,
+              description: `${profile.finnhubIndustry || 'Company'} - ${profile.exchange || item.type}`,
+              type: 'stock',
+              logo: profile.logo || null,
+              country: profile.country || null,
+              exchange: profile.exchange || null,
+              industry: profile.finnhubIndustry || null,
+              marketCap: profile.marketCapitalization || null,
+            };
+          } catch (error) {
+            return {
+              symbol: item.symbol,
+              name: item.description,
+              description: item.type,
+              type: 'stock',
+            };
+          }
+        })
+      );
+      
+      console.log(`[ASSETS] Encontrados ${detailedResults.length} resultados`);
+      return { results: detailedResults };
+    } catch (error) {
+      console.error('[ASSETS] Error en búsqueda:', error);
+      return { results: [], error: error.message };
+    }
+  }
+
+  // Obtener o crear asset (evita duplicados)
+  async getOrCreateAsset(symbol: string) {
+    console.log(`[ASSETS] Get or create: ${symbol}`);
+    
+    // Buscar si ya existe
+    const existing = await this.assetRepository.findOne({ 
+      where: { symbol } 
+    });
+    
+    if (existing) {
+      console.log(`[ASSETS] Asset ${symbol} ya existe con ID ${existing.id}`);
+      return existing;
+    }
+    
+    // No existe, obtener datos de Finnhub y crear
+    console.log(`[ASSETS] Creando nuevo asset: ${symbol}`);
+    
+    try {
+      const profileRes = await fetch(
+        `https://finnhub.io/api/v1/stock/profile2?symbol=${symbol}&token=${FINNHUB_API_KEY}`
+      );
+      const profile = await profileRes.json();
+      
+      if (profile && profile.name && !profile.error) {
+        const newAsset = await this.create({
+          symbol: symbol,
+          name: profile.name,
+          type: 'stock',
+          description: `${profile.finnhubIndustry || 'Company'} - ${profile.exchange || ''}`
+        });
+        
+        console.log(`[ASSETS] ✅ Asset creado: ${newAsset.name} (${newAsset.symbol})`);
+        return newAsset;
+      }
+      
+      throw new Error('No se encontró información para este símbolo');
+    } catch (error) {
+      console.error(`[ASSETS] Error creando asset:`, error);
+      throw new Error(`Error creando asset: ${error.message}`);
+    }
+  }
+
   // Obtener un activo por ID
   async findOne(id: number) {
     return await this.assetRepository.findOne({ where: { id } }); // Devuelve un activo según el ID

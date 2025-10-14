@@ -17,6 +17,16 @@ export class AssetsController {
     return this.assetsService.findAll();
   }
 
+  @Get('search/:query')
+  searchAssets(@Param('query') query: string) {
+    return this.assetsService.searchInFinnhub(query);
+  }
+
+  @Post('get-or-create')
+  getOrCreateAsset(@Body() data: { symbol: string }) {
+    return this.assetsService.getOrCreateAsset(data.symbol);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: number) {
     return this.assetsService.findOne(id);
