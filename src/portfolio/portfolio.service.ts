@@ -57,27 +57,27 @@ export class PortfolioService {
       if (asset.name.includes('Asset de Prueba') || asset.name.includes('Asset ')) {
         console.log(`[PORTFOLIO] Asset con nombre genérico detectado, buscando datos reales de ${asset.symbol}`);
         try {
-          // Intentar obtener datos de Finnhub
-          const quoteRes = await fetch(`https://finnhub.io/api/v1/quote?symbol=${asset.symbol}&token=${FINNHUB_API_KEY}`);
-          const quoteData = await quoteRes.json();
-          
           // Obtener información de la compañía
           const profileRes = await fetch(`https://finnhub.io/api/v1/stock/profile2?symbol=${asset.symbol}&token=${FINNHUB_API_KEY}`);
           const profileData = await profileRes.json();
           
-          if (profileData && profileData.name) {
+          console.log(`[PORTFOLIO] Respuesta de Finnhub:`, JSON.stringify(profileData, null, 2));
+          
+          if (profileData && profileData.name && !profileData.error) {
             assetName = profileData.name;
-            console.log(`[PORTFOLIO] Datos reales obtenidos: ${assetName}`);
+            console.log(`[PORTFOLIO] ✅ Datos reales obtenidos: ${assetName}`);
             
             // Actualizar el asset en la base de datos con el nombre real
             await this.assetRepository.update(asset.id, {
               name: assetName,
               description: `${profileData.finnhubIndustry || 'Company'} - ${profileData.exchange || ''}`
             });
-            console.log(`[PORTFOLIO] Asset actualizado en base de datos`);
+            console.log(`[PORTFOLIO] ✅ Asset actualizado en base de datos`);
+          } else {
+            console.log(`[PORTFOLIO] ⚠️  Símbolo "${asset.symbol}" no encontrado en Finnhub. Usar símbolo real (AAPL, TSLA, MSFT, etc.)`);
           }
         } catch (error) {
-          console.log(`[PORTFOLIO] No se pudieron obtener datos reales: ${error.message}`);
+          console.log(`[PORTFOLIO] ❌ Error obteniendo datos de Finnhub: ${error.message}`);
         }
       }
       
