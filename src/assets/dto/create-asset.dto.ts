@@ -11,4 +11,6 @@ export class CreateAssetDto {
     type: 'crypto' | 'stock' | 'forex';
 
     description?: string;
+
+    coinGeckoId?: string; // ID de CoinGecko para criptomonedas
 }

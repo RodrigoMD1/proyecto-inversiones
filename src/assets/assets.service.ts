@@ -242,7 +242,8 @@ export class AssetsService {
           symbol: symbol.toUpperCase(),
           name: coin.name,
           type: 'crypto',
-          description: `Cryptocurrency - Rank #${coin.market_cap_rank || 'N/A'}`
+          description: `Cryptocurrency - Rank #${coin.market_cap_rank || 'N/A'}`,
+          coinGeckoId: coin.id // ¡IMPORTANTE! Guardar el ID de CoinGecko
         });
         
         return newAsset;
@@ -294,27 +295,33 @@ export class AssetsService {
     // Si es criptomoneda, usar CoinGecko
     if (asset && asset.type === 'crypto') {
       try {
-        // Mapeo de símbolos a IDs de CoinGecko
-        const cryptoIdMap = {
-          'BTC': 'bitcoin',
-          'ETH': 'ethereum',
-          'USDT': 'tether',
-          'BNB': 'binancecoin',
-          'XRP': 'ripple',
-          'ADA': 'cardano',
-          'SOL': 'solana',
-          'DOGE': 'dogecoin',
-          'DOT': 'polkadot',
-          'MATIC': 'matic-network'
-        };
+        // Usar el coinGeckoId guardado en la base de datos, o mapear el símbolo
+        let coinId = asset.coinGeckoId;
         
-        const coinId = cryptoIdMap[symbol] || symbol.toLowerCase();
+        if (!coinId) {
+          // Fallback: mapeo manual si no hay coinGeckoId guardado
+          const cryptoIdMap = {
+            'BTC': 'bitcoin',
+            'ETH': 'ethereum',
+            'USDT': 'tether',
+            'BNB': 'binancecoin',
+            'XRP': 'ripple',
+            'ADA': 'cardano',
+            'SOL': 'solana',
+            'DOGE': 'dogecoin',
+            'DOT': 'polkadot',
+            'MATIC': 'matic-network'
+          };
+          coinId = cryptoIdMap[symbol] || symbol.toLowerCase();
+        }
         
         const response = await fetch(
           `https://api.coingecko.com/api/v3/simple/price?ids=${coinId}&vs_currencies=usd&include_24hr_change=true&include_24hr_vol=true`
         );
         
         const data = await response.json();
+        
+        console.log(`[ASSETS] Precio crypto para ${symbol} (coinId: ${coinId}):`, JSON.stringify(data));
         
         if (data[coinId] && data[coinId].usd) {
           const price = data[coinId].usd;

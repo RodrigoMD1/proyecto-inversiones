@@ -20,5 +20,8 @@ export class Asset {
     @Column({ nullable: true })
     description: string; // Descripción opcional
 
+    @Column({ nullable: true })
+    coinGeckoId: string; // ID de CoinGecko para criptomonedas (ej: 'bitcoin', 'ethereum')
+
 
 }
