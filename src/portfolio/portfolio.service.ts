@@ -50,13 +50,44 @@ export class PortfolioService {
         throw new NotFoundException(`Asset con ID ${data.assetId} no encontrado`);
       }
       
+      // Si el asset tiene nombre genérico, intentar obtener datos reales
+      let assetName = asset.name;
+      const assetSymbol = asset.symbol;
+      
+      if (asset.name.includes('Asset de Prueba') || asset.name.includes('Asset ')) {
+        console.log(`[PORTFOLIO] Asset con nombre genérico detectado, buscando datos reales de ${asset.symbol}`);
+        try {
+          // Intentar obtener datos de Finnhub
+          const quoteRes = await fetch(`https://finnhub.io/api/v1/quote?symbol=${asset.symbol}&token=${FINNHUB_API_KEY}`);
+          const quoteData = await quoteRes.json();
+          
+          // Obtener información de la compañía
+          const profileRes = await fetch(`https://finnhub.io/api/v1/stock/profile2?symbol=${asset.symbol}&token=${FINNHUB_API_KEY}`);
+          const profileData = await profileRes.json();
+          
+          if (profileData && profileData.name) {
+            assetName = profileData.name;
+            console.log(`[PORTFOLIO] Datos reales obtenidos: ${assetName}`);
+            
+            // Actualizar el asset en la base de datos con el nombre real
+            await this.assetRepository.update(asset.id, {
+              name: assetName,
+              description: `${profileData.finnhubIndustry || 'Company'} - ${profileData.exchange || ''}`
+            });
+            console.log(`[PORTFOLIO] Asset actualizado en base de datos`);
+          }
+        } catch (error) {
+          console.log(`[PORTFOLIO] No se pudieron obtener datos reales: ${error.message}`);
+        }
+      }
+      
       // Usar los datos reales del asset
-      name = asset.name;
-      ticker = asset.symbol;
+      name = assetName;
+      ticker = assetSymbol;
       type = asset.type === 'stock' ? 'Acción' : 
              asset.type === 'crypto' ? 'Cripto' : 
              asset.type === 'forex' ? 'Forex' : 'Acción';
-      description = asset.description || `Descripción de ${asset.name}`;
+      description = asset.description || `Descripción de ${assetName}`;
       
       console.log(`[PORTFOLIO] Datos a guardar: name=${name}, ticker=${ticker}, type=${type}`);
     }
