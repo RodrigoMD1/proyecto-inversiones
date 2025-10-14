@@ -37,14 +37,10 @@ export class PortfolioService {
     let ticker = data.ticker;
     
     if (data.assetId && !name) {
-      console.log(`[PORTFOLIO] Buscando asset con ID: ${data.assetId}`);
-      
       // Buscar el asset en la base de datos
       const asset = await this.assetRepository.findOne({ 
         where: { id: data.assetId } 
       });
-      
-      console.log('[PORTFOLIO] Asset encontrado:', JSON.stringify(asset, null, 2));
       
       if (!asset) {
         throw new NotFoundException(`Asset con ID ${data.assetId} no encontrado`);
@@ -55,29 +51,22 @@ export class PortfolioService {
       const assetSymbol = asset.symbol;
       
       if (asset.name.includes('Asset de Prueba') || asset.name.includes('Asset ')) {
-        console.log(`[PORTFOLIO] Asset con nombre genérico detectado, buscando datos reales de ${asset.symbol}`);
         try {
           // Obtener información de la compañía
           const profileRes = await fetch(`https://finnhub.io/api/v1/stock/profile2?symbol=${asset.symbol}&token=${FINNHUB_API_KEY}`);
           const profileData = await profileRes.json();
           
-          console.log(`[PORTFOLIO] Respuesta de Finnhub:`, JSON.stringify(profileData, null, 2));
-          
           if (profileData && profileData.name && !profileData.error) {
             assetName = profileData.name;
-            console.log(`[PORTFOLIO] ✅ Datos reales obtenidos: ${assetName}`);
             
             // Actualizar el asset en la base de datos con el nombre real
             await this.assetRepository.update(asset.id, {
               name: assetName,
               description: `${profileData.finnhubIndustry || 'Company'} - ${profileData.exchange || ''}`
             });
-            console.log(`[PORTFOLIO] ✅ Asset actualizado en base de datos`);
-          } else {
-            console.log(`[PORTFOLIO] ⚠️  Símbolo "${asset.symbol}" no encontrado en Finnhub. Usar símbolo real (AAPL, TSLA, MSFT, etc.)`);
           }
         } catch (error) {
-          console.log(`[PORTFOLIO] ❌ Error obteniendo datos de Finnhub: ${error.message}`);
+          // Silenciar error, usar nombre original
         }
       }
       
@@ -88,8 +77,6 @@ export class PortfolioService {
              asset.type === 'crypto' ? 'Cripto' : 
              asset.type === 'forex' ? 'Forex' : 'Acción';
       description = asset.description || `Descripción de ${assetName}`;
-      
-      console.log(`[PORTFOLIO] Datos a guardar: name=${name}, ticker=${ticker}, type=${type}`);
     }
 
     const portfolio = this.portfolioRepository.create({

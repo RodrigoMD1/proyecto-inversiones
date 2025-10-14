@@ -20,8 +20,6 @@ export class AssetsService {
 
   // Crear un nuevo activo
   async create(createAssetDto: CreateAssetDto) {
-    console.log('[ASSETS] Creando nuevo asset:', JSON.stringify(createAssetDto, null, 2));
-    
     let finalSymbol = createAssetDto.symbol;
     let finalName = createAssetDto.name;
     let finalDescription = createAssetDto.description;
@@ -35,8 +33,6 @@ export class AssetsService {
         createAssetDto.name.toLowerCase().includes('microsoft') ||
         createAssetDto.name.toLowerCase().includes('google') ||
         createAssetDto.name.toLowerCase().includes('amazon')) {
-      
-      console.log('[ASSETS] Símbolo genérico o nombre conocido detectado, buscando en Finnhub...');
       
       try {
         // Mapeo de nombres comunes a símbolos
@@ -60,7 +56,6 @@ export class AssetsService {
         for (const [key, value] of Object.entries(commonStocks)) {
           if (nameLower.includes(key)) {
             symbolToCheck = value;
-            console.log(`[ASSETS] Nombre "${createAssetDto.name}" mapeado a símbolo: ${symbolToCheck}`);
             break;
           }
         }
@@ -69,19 +64,14 @@ export class AssetsService {
         const profileRes = await fetch(`https://finnhub.io/api/v1/stock/profile2?symbol=${symbolToCheck}&token=${FINNHUB_API_KEY}`);
         const profileData = await profileRes.json();
         
-        console.log('[ASSETS] Respuesta de Finnhub:', JSON.stringify(profileData, null, 2));
-        
         if (profileData && profileData.name && !profileData.error) {
           finalSymbol = symbolToCheck;
           finalName = profileData.name;
           finalDescription = `${profileData.finnhubIndustry || 'Company'} - ${profileData.exchange || ''}`;
-          console.log(`[ASSETS] ✅ Datos reales obtenidos: ${finalName} (${finalSymbol})`);
-        } else {
-          console.log(`[ASSETS] ⚠️  No se encontró información para "${symbolToCheck}". Usando datos originales.`);
         }
         
       } catch (error) {
-        console.log(`[ASSETS] ❌ Error buscando en Finnhub: ${error.message}`);
+        // Silenciar error, usar datos originales
       }
     }
     
@@ -92,10 +82,7 @@ export class AssetsService {
       description: finalDescription || createAssetDto.description
     });
     
-    const saved = await this.assetRepository.save(asset);
-    console.log('[ASSETS] ✅ Asset guardado:', JSON.stringify(saved, null, 2));
-    
-    return saved;
+    return await this.assetRepository.save(asset);
   }
 
   // Obtener todos los activos
@@ -105,8 +92,6 @@ export class AssetsService {
 
   // Buscar assets en Finnhub
   async searchInFinnhub(query: string) {
-    console.log(`[ASSETS] Buscando en Finnhub: ${query}`);
-    
     try {
       // Buscar en Finnhub
       const response = await fetch(
@@ -149,7 +134,6 @@ export class AssetsService {
         })
       );
       
-      console.log(`[ASSETS] Encontrados ${detailedResults.length} resultados`);
       return { results: detailedResults };
     } catch (error) {
       console.error('[ASSETS] Error en búsqueda:', error);
@@ -159,21 +143,16 @@ export class AssetsService {
 
   // Obtener o crear asset (evita duplicados)
   async getOrCreateAsset(symbol: string) {
-    console.log(`[ASSETS] Get or create: ${symbol}`);
-    
     // Buscar si ya existe
     const existing = await this.assetRepository.findOne({ 
       where: { symbol } 
     });
     
     if (existing) {
-      console.log(`[ASSETS] Asset ${symbol} ya existe con ID ${existing.id}`);
       return existing;
     }
     
     // No existe, obtener datos de Finnhub y crear
-    console.log(`[ASSETS] Creando nuevo asset: ${symbol}`);
-    
     try {
       const profileRes = await fetch(
         `https://finnhub.io/api/v1/stock/profile2?symbol=${symbol}&token=${FINNHUB_API_KEY}`
@@ -188,7 +167,6 @@ export class AssetsService {
           description: `${profile.finnhubIndustry || 'Company'} - ${profile.exchange || ''}`
         });
         
-        console.log(`[ASSETS] ✅ Asset creado: ${newAsset.name} (${newAsset.symbol})`);
         return newAsset;
       }
       
@@ -218,14 +196,11 @@ export class AssetsService {
 
   // Obtener precio actual de un activo con cache
   async getCurrentPrice(symbol: string) {
-    console.log(`[ASSETS] Obteniendo precio para: ${symbol}`);
-    
     // Verificar cache
     const cached = this.priceCache.get(symbol);
     const now = Date.now();
     
     if (cached && (now - cached.timestamp) < this.CACHE_DURATION) {
-      console.log(`[ASSETS] ✅ Precio de ${symbol} desde cache: $${cached.price}`);
       return {
         symbol: symbol,
         price: cached.price,
@@ -244,8 +219,6 @@ export class AssetsService {
       
       const data = await response.json();
       
-      console.log(`[ASSETS] Respuesta Finnhub para ${symbol}:`, JSON.stringify(data, null, 2));
-      
       // data.c = current price (precio actual)
       if (data.c && data.c > 0) {
         // Guardar en cache
@@ -262,8 +235,6 @@ export class AssetsService {
           }
         });
         
-        console.log(`[ASSETS] ✅ Precio de ${symbol} desde Finnhub: $${data.c}`);
-        
         return {
           symbol: symbol,
           price: data.c,
@@ -278,11 +249,9 @@ export class AssetsService {
           changePercent: data.dp
         };
       } else {
-        console.log(`[ASSETS] ⚠️ Símbolo ${symbol} no tiene precio disponible`);
         throw new Error('Precio no disponible para este símbolo');
       }
     } catch (error) {
-      console.error(`[ASSETS] ❌ Error obteniendo precio:`, error);
       throw new Error(`Precio no disponible para este símbolo: ${error.message}`);
     }
   }
