@@ -295,10 +295,18 @@ export class AssetsService {
     // Si es criptomoneda, usar CoinGecko
     if (asset && asset.type === 'crypto') {
       try {
+        console.log(`[ASSETS] Asset encontrado para ${symbol}:`, {
+          id: asset.id,
+          symbol: asset.symbol,
+          type: asset.type,
+          coinGeckoId: asset.coinGeckoId
+        });
+        
         // Usar el coinGeckoId guardado en la base de datos, o mapear el símbolo
         let coinId = asset.coinGeckoId;
         
         if (!coinId) {
+          console.log(`[ASSETS] No hay coinGeckoId guardado, usando mapeo manual para ${symbol}`);
           // Fallback: mapeo manual si no hay coinGeckoId guardado
           const cryptoIdMap = {
             'BTC': 'bitcoin',
@@ -313,15 +321,19 @@ export class AssetsService {
             'MATIC': 'matic-network'
           };
           coinId = cryptoIdMap[symbol] || symbol.toLowerCase();
+          console.log(`[ASSETS] Usando coinId mapeado: ${coinId}`);
+        } else {
+          console.log(`[ASSETS] Usando coinGeckoId de DB: ${coinId}`);
         }
         
-        const response = await fetch(
-          `https://api.coingecko.com/api/v3/simple/price?ids=${coinId}&vs_currencies=usd&include_24hr_change=true&include_24hr_vol=true`
-        );
+        const apiUrl = `https://api.coingecko.com/api/v3/simple/price?ids=${coinId}&vs_currencies=usd&include_24hr_change=true&include_24hr_vol=true`;
+        console.log(`[ASSETS] URL de CoinGecko: ${apiUrl}`);
+        
+        const response = await fetch(apiUrl);
         
         const data = await response.json();
         
-        console.log(`[ASSETS] Precio crypto para ${symbol} (coinId: ${coinId}):`, JSON.stringify(data));
+        console.log(`[ASSETS] Respuesta de CoinGecko para ${symbol} (coinId: ${coinId}):`, JSON.stringify(data));
         
         if (data[coinId] && data[coinId].usd) {
           const price = data[coinId].usd;
