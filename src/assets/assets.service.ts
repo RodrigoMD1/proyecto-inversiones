@@ -93,14 +93,39 @@ export class AssetsService {
   // Buscar assets en Finnhub
   async searchInFinnhub(query: string) {
     try {
-      // Buscar en Finnhub
+      // Buscar simultáneamente en acciones (Finnhub) y criptos (CoinGecko)
+      const [stockResults, cryptoResults] = await Promise.all([
+        this.searchStocks(query),
+        this.searchCrypto(query)
+      ]);
+      
+      // Combinar resultados (criptos primero si la query parece crypto)
+      const isCryptoQuery = query.toLowerCase().includes('bitcoin') || 
+                           query.toLowerCase().includes('crypto') ||
+                           query.toLowerCase().includes('btc') ||
+                           query.toLowerCase().includes('eth');
+      
+      const combined = isCryptoQuery 
+        ? [...cryptoResults, ...stockResults]
+        : [...stockResults, ...cryptoResults];
+      
+      return { results: combined.slice(0, 10) }; // Top 10 resultados
+    } catch (error) {
+      console.error('[ASSETS] Error en búsqueda:', error);
+      return { results: [], error: error.message };
+    }
+  }
+
+  // Buscar acciones en Finnhub
+  private async searchStocks(query: string) {
+    try {
       const response = await fetch(
         `https://finnhub.io/api/v1/search?q=${encodeURIComponent(query)}&token=${FINNHUB_API_KEY}`
       );
       const data = await response.json();
       
       if (!data.result || data.result.length === 0) {
-        return { results: [] };
+        return [];
       }
       
       // Obtener detalles de los primeros 5 resultados
@@ -134,10 +159,40 @@ export class AssetsService {
         })
       );
       
-      return { results: detailedResults };
+      return detailedResults;
     } catch (error) {
-      console.error('[ASSETS] Error en búsqueda:', error);
-      return { results: [], error: error.message };
+      return [];
+    }
+  }
+
+  // Buscar criptomonedas en CoinGecko
+  private async searchCrypto(query: string) {
+    try {
+      const response = await fetch(
+        `https://api.coingecko.com/api/v3/search?query=${encodeURIComponent(query)}`
+      );
+      const data = await response.json();
+      
+      if (!data.coins || data.coins.length === 0) {
+        return [];
+      }
+      
+      // Mapear resultados de CoinGecko a nuestro formato
+      const cryptoResults = data.coins.slice(0, 5).map((coin: any) => ({
+        symbol: coin.symbol.toUpperCase(),
+        name: coin.name,
+        description: `Cryptocurrency - Rank #${coin.market_cap_rank || 'N/A'}`,
+        type: 'crypto',
+        logo: coin.large || coin.thumb,
+        exchange: 'CoinGecko',
+        industry: 'Cryptocurrency',
+        marketCap: null,
+        coinGeckoId: coin.id // Para futuras consultas de precio
+      }));
+      
+      return cryptoResults;
+    } catch (error) {
+      return [];
     }
   }
 
@@ -152,7 +207,7 @@ export class AssetsService {
       return existing;
     }
     
-    // No existe, obtener datos de Finnhub y crear
+    // Intentar primero como acción (Finnhub)
     try {
       const profileRes = await fetch(
         `https://finnhub.io/api/v1/stock/profile2?symbol=${symbol}&token=${FINNHUB_API_KEY}`
@@ -169,12 +224,34 @@ export class AssetsService {
         
         return newAsset;
       }
-      
-      throw new Error('No se encontró información para este símbolo');
     } catch (error) {
-      console.error(`[ASSETS] Error creando asset:`, error);
-      throw new Error(`Error creando asset: ${error.message}`);
+      // Si falla, intentar como cripto
     }
+    
+    // Intentar como criptomoneda (CoinGecko)
+    try {
+      const searchRes = await fetch(
+        `https://api.coingecko.com/api/v3/search?query=${encodeURIComponent(symbol)}`
+      );
+      const searchData = await searchRes.json();
+      
+      if (searchData.coins && searchData.coins.length > 0) {
+        const coin = searchData.coins[0];
+        
+        const newAsset = await this.create({
+          symbol: symbol.toUpperCase(),
+          name: coin.name,
+          type: 'crypto',
+          description: `Cryptocurrency - Rank #${coin.market_cap_rank || 'N/A'}`
+        });
+        
+        return newAsset;
+      }
+    } catch (error) {
+      console.error(`[ASSETS] Error creando crypto:`, error);
+    }
+    
+    throw new Error('No se encontró información para este símbolo');
   }
 
   // Obtener un activo por ID
@@ -211,7 +288,68 @@ export class AssetsService {
       };
     }
     
-    // Obtener de Finnhub
+    // Buscar el activo en la base de datos para determinar el tipo
+    const asset = await this.assetRepository.findOne({ where: { symbol } });
+    
+    // Si es criptomoneda, usar CoinGecko
+    if (asset && asset.type === 'crypto') {
+      try {
+        // Mapeo de símbolos a IDs de CoinGecko
+        const cryptoIdMap = {
+          'BTC': 'bitcoin',
+          'ETH': 'ethereum',
+          'USDT': 'tether',
+          'BNB': 'binancecoin',
+          'XRP': 'ripple',
+          'ADA': 'cardano',
+          'SOL': 'solana',
+          'DOGE': 'dogecoin',
+          'DOT': 'polkadot',
+          'MATIC': 'matic-network'
+        };
+        
+        const coinId = cryptoIdMap[symbol] || symbol.toLowerCase();
+        
+        const response = await fetch(
+          `https://api.coingecko.com/api/v3/simple/price?ids=${coinId}&vs_currencies=usd&include_24hr_change=true&include_24hr_vol=true`
+        );
+        
+        const data = await response.json();
+        
+        if (data[coinId] && data[coinId].usd) {
+          const price = data[coinId].usd;
+          const change = data[coinId].usd_24h_change || 0;
+          
+          // Guardar en cache
+          this.priceCache.set(symbol, {
+            price: price,
+            timestamp: now,
+            data: {
+              change: change,
+              changePercent: change,
+              volume24h: data[coinId].usd_24h_vol || 0
+            }
+          });
+          
+          return {
+            symbol: symbol,
+            price: price,
+            currency: 'USD',
+            timestamp: new Date().toISOString(),
+            cached: false,
+            change: change,
+            changePercent: change,
+            volume24h: data[coinId].usd_24h_vol || 0,
+            type: 'crypto'
+          };
+        }
+      } catch (error) {
+        console.error(`[ASSETS] Error obteniendo precio crypto:`, error);
+        throw new Error('Precio no disponible para esta criptomoneda');
+      }
+    }
+    
+    // Si es acción o no encontrado, usar Finnhub
     try {
       const response = await fetch(
         `https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${FINNHUB_API_KEY}`
@@ -246,7 +384,8 @@ export class AssetsService {
           open: data.o,
           previousClose: data.pc,
           change: data.d,
-          changePercent: data.dp
+          changePercent: data.dp,
+          type: 'stock'
         };
       } else {
         throw new Error('Precio no disponible para este símbolo');
