@@ -27,6 +27,11 @@ export class AssetsController {
     return this.assetsService.getOrCreateAsset(data.symbol);
   }
 
+  @Get('current-price/:symbol')
+  getCurrentPrice(@Param('symbol') symbol: string) {
+    return this.assetsService.getCurrentPrice(symbol);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: number) {
     return this.assetsService.findOne(id);
