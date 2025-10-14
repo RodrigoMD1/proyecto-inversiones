@@ -32,6 +32,11 @@ export class AssetsController {
     return this.assetsService.getCurrentPrice(symbol);
   }
 
+  @Post('fix-crypto-ids')
+  fixCryptoIds() {
+    return this.assetsService.fixCryptoIds();
+  }
+
   @Get(':id')
   findOne(@Param('id') id: number) {
     return this.assetsService.findOne(id);

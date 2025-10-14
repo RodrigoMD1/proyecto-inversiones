@@ -272,6 +272,42 @@ export class AssetsService {
     return { deleted: true }; // Retorna un objeto confirmando la eliminación
   }
 
+  // Método temporal para corregir coinGeckoId de criptomonedas existentes
+  async fixCryptoIds() {
+    const cryptoIdMap = {
+      'BTC': 'bitcoin',
+      'ETH': 'ethereum',
+      'USDT': 'tether',
+      'BNB': 'binancecoin',
+      'XRP': 'ripple',
+      'ADA': 'cardano',
+      'SOL': 'solana',
+      'DOGE': 'dogecoin',
+      'DOT': 'polkadot',
+      'MATIC': 'matic-network'
+    };
+
+    const cryptoAssets = await this.assetRepository.find({ where: { type: 'crypto' } });
+    const updates = [];
+
+    for (const asset of cryptoAssets) {
+      if (!asset.coinGeckoId && cryptoIdMap[asset.symbol]) {
+        asset.coinGeckoId = cryptoIdMap[asset.symbol];
+        await this.assetRepository.save(asset);
+        updates.push({
+          symbol: asset.symbol,
+          coinGeckoId: asset.coinGeckoId
+        });
+      }
+    }
+
+    return {
+      message: 'CoinGecko IDs actualizados',
+      updated: updates,
+      total: cryptoAssets.length
+    };
+  }
+
   // Obtener precio actual de un activo con cache
   async getCurrentPrice(symbol: string) {
     // Verificar cache
